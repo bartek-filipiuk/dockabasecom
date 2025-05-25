@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install dependencies only when needed
 COPY package*.json ./
-RUN npm ci
+RUN npm install
 
 # Copy source files
 COPY . .
