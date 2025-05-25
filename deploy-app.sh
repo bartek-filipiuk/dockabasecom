@@ -129,9 +129,17 @@ prepare_files() {
   
   # Check if we need to build the application
   if [ -f "package.json" ] && [ ! -f "dist/index.html" ]; then
-    print_message "Building the application..."
-    npm install
-    npm run build
+    print_message "Building the application using Docker..."
+    
+    # Build the application inside a temporary Node container
+    print_message "Running build in Docker container..."
+    docker run --rm -v "$(pwd):/app" -w /app node:18 sh -c "npm install && npm run build"
+    
+    # Check if build was successful
+    if [ ! -f "dist/index.html" ]; then
+      print_error "Build failed. Check for errors above."
+      exit 1
+    fi
   fi
   
   print_message "File preparation completed"
