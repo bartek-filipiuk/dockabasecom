@@ -117,6 +117,16 @@ configure_nginx() {
   # This function configures Nginx with the domain
   print_message "Configuring Nginx for domain: $DOMAIN_NAME..."
 
+  # Check if SSL certificates exist
+  local ssl_exists=false
+  if [ -d "docker/nginx/certbot/conf/live/$DOMAIN_NAME" ]; then
+    print_message "SSL certificates found for domain: $DOMAIN_NAME"
+    ssl_exists=true
+  else
+    print_message "No SSL certificates found. Configuring for HTTP only initially."
+    print_message "HTTPS will be enabled after certificate generation."
+  fi
+
   # Check if we have an existing Nginx configuration template
   if [ -f "docker/nginx/default.conf.template" ]; then
     print_message "Found Nginx configuration template. Using it as base..."
@@ -138,8 +148,12 @@ configure_nginx() {
       
       # Replace domain in the existing file
       sed -i "s/server_name .*\$/server_name $DOMAIN_NAME www.$DOMAIN_NAME;/g" "docker/nginx/default.conf"
-      sed -i "s/ssl_certificate .*\/fullchain\.pem;/ssl_certificate \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/fullchain.pem;/g" "docker/nginx/default.conf"
-      sed -i "s/ssl_certificate_key .*\/privkey\.pem;/ssl_certificate_key \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/privkey.pem;/g" "docker/nginx/default.conf"
+      
+      if $ssl_exists; then
+        # Update SSL certificate paths if they exist
+        sed -i "s/ssl_certificate .*\/fullchain\.pem;/ssl_certificate \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/fullchain.pem;/g" "docker/nginx/default.conf"
+        sed -i "s/ssl_certificate_key .*\/privkey\.pem;/ssl_certificate_key \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/privkey.pem;/g" "docker/nginx/default.conf"
+      fi
       
       print_message "Existing Nginx configuration updated with domain: $DOMAIN_NAME"
     else
@@ -147,7 +161,10 @@ configure_nginx() {
       mkdir -p docker/nginx
       
       # Create the Nginx configuration from scratch
-      cat > docker/nginx/default.conf << EOF
+      if $ssl_exists; then
+        # Create full HTTPS configuration if SSL certificates exist
+        print_message "Creating HTTPS configuration with existing SSL certificates"
+        cat > docker/nginx/default.conf << EOF
 server {
     listen 80;
     listen [::]:80;
@@ -166,8 +183,9 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
     server_name $DOMAIN_NAME www.$DOMAIN_NAME;
     server_tokens off;
 
@@ -225,6 +243,50 @@ server {
     }
 }
 EOF
+      else
+        # Create HTTP-only configuration if no SSL certificates exist
+        print_message "Creating HTTP-only configuration (SSL will be added later)"
+        cat > docker/nginx/default.conf << EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    server_tokens off;
+
+    # Let's Encrypt verification
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # Serve static content
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
+
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # Error pages
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+EOF
+      fi
     fi
   fi
 }
@@ -273,7 +335,17 @@ EOF
   
   # Wait for Nginx to start
   print_message "Waiting for Nginx to start..."
-  sleep 5
+  sleep 10
+  
+  # Check if Nginx is running
+  if ! docker compose ps nginx | grep -q "Up"; then
+    print_error "Nginx container failed to start. Check logs with: docker compose logs nginx"
+    exit 1
+  fi
+  
+  print_message "Nginx is running. Proceeding with certificate generation..."
+  print_message "IMPORTANT: Make sure your domain $DOMAIN_NAME points to this server's IP address"
+  print_message "and that ports 80 and 443 are open in your firewall."
   
   # Generate SSL certificate with Let's Encrypt
   print_message "Requesting certificate from Let's Encrypt..."
@@ -281,21 +353,102 @@ EOF
     --email $EMAIL --agree-tos --no-eff-email \
     -d $DOMAIN_NAME -d www.$DOMAIN_NAME
   
-  # Restore the original SSL configuration
-  if [ -f "docker/nginx/default.conf.ssl.bak" ]; then
-    print_message "Restoring SSL configuration..."
-    cp docker/nginx/default.conf.ssl.bak docker/nginx/default.conf
-  else
-    # Create a new SSL configuration
-    print_message "Creating SSL configuration..."
-    configure_nginx
+  # Check if certificate was generated successfully
+  if [ ! -d "docker/nginx/certbot/conf/live/$DOMAIN_NAME" ]; then
+    print_error "Failed to generate SSL certificate. Check certbot logs."
+    print_message "You can still use the site over HTTP, but HTTPS will not be available."
+    print_message "To retry certificate generation later, run: ./deploy-app.sh deploy $DOMAIN_NAME $EMAIL"
+    return 1
   fi
+  
+  # Create full SSL configuration
+  print_message "Creating SSL configuration..."
+  cat > docker/nginx/default.conf << EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    server_tokens off;
+
+    # Redirect all HTTP requests to HTTPS
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+
+    # Let's Encrypt verification
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    server_tokens off;
+
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    # Diffie-Hellman parameter for DHE ciphersuites
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Intermediate configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    # HSTS (ngx_http_headers_module is required)
+    add_header Strict-Transport-Security "max-age=63072000" always;
+
+    # OCSP Stapling
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    # Root directory and index files
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
+
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # Main location block
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Error pages
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+EOF
   
   # Restart Nginx to apply SSL configuration
   print_message "Restarting Nginx to apply SSL configuration..."
   docker compose restart nginx
   
   print_message "SSL certificate generated successfully"
+  print_message "Your site is now available at https://$DOMAIN_NAME"
 }
 
 # Parse command line arguments
