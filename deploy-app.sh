@@ -1,8 +1,16 @@
 #!/bin/bash
 
-# Dockabase Application Deployment Script for Ubuntu 24.04
-# This script deploys the Dockabase application with SSL support
+# Dockabase Application Deployment Script
+# This script deploys and manages the Dockabase application with SSL support
 # Can be run as a regular user (who is in the docker group)
+#
+# Usage:
+#   ./deploy-app.sh deploy domain.com email@example.com  - Deploy application with SSL
+#   ./deploy-app.sh start                               - Start containers
+#   ./deploy-app.sh stop                                - Stop containers
+#   ./deploy-app.sh restart                             - Restart containers
+#   ./deploy-app.sh status                              - Show container status
+#   ./deploy-app.sh logs                                - Show container logs
 
 # Exit on error
 set -e
@@ -26,130 +34,270 @@ print_error() {
   echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Check if user is in docker group
-if ! groups | grep -q '\bdocker\b'; then
-  print_error "Current user is not in the docker group. Please run setup-system.sh first."
-  print_error "After adding yourself to the docker group, log out and log back in before running this script."
-  exit 1
-fi
-
-# Get domain name
-if [ -z "$1" ]; then
-  read -p "Enter your domain name (e.g., dockabase.com): " DOMAIN_NAME
-else
-  DOMAIN_NAME=$1
-  print_message "Using domain: $DOMAIN_NAME"
-fi
-
-# Validate domain name format
-if [[ ! $DOMAIN_NAME =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
-  print_error "Invalid domain name format. Please use a valid domain (e.g., example.com)"
-  exit 1
-fi
-
-# Check if email is provided for Let's Encrypt
-if [ -z "$2" ]; then
-  read -p "Enter your email address for Let's Encrypt notifications: " EMAIL
-else
-  EMAIL=$2
-  print_message "Using email: $EMAIL"
-fi
-
-# Validate email format
-if [[ ! $EMAIL =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-  print_error "Invalid email format. Please provide a valid email address"
-  exit 1
-fi
-
-# Set project directory
-PROJECT_DIR="/opt/dockabase"
-print_message "Using project directory: $PROJECT_DIR"
-
-# Check if project directory exists and is writable
-if [ ! -d "$PROJECT_DIR" ]; then
-  print_error "Project directory $PROJECT_DIR does not exist"
-  print_error "Please run setup-system.sh first to create the directory"
-  exit 1
-fi
-
-if [ ! -w "$PROJECT_DIR" ]; then
-  print_error "Project directory $PROJECT_DIR is not writable by current user"
-  print_error "Please run setup-system.sh first to set proper permissions"
-  exit 1
-fi
-
-# Navigate to project directory
-cd $PROJECT_DIR
-
-# Check for skip-download flag
-SKIP_DOWNLOAD=false
-if [ "$1" == "--skip-download" ]; then
-  SKIP_DOWNLOAD=true
-  # Shift arguments so domain becomes $1 and email becomes $2
-  shift
-  DOMAIN_NAME=$1
-  EMAIL=$2
-fi
-
-# Clone the repository or copy project files
-if [ "$SKIP_DOWNLOAD" = false ]; then
-  print_message "Checking for project files..."
+# Define functions for container management
+deploy_app() {
+  local domain=$1
+  local email=$2
   
-  # Check if we're running from the project directory and can copy files
-  SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-  CURRENT_DIR=$(pwd)
+  # Validate domain name format
+  if [[ ! $domain =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
+    print_error "Invalid domain name format. Please use a valid domain (e.g., example.com)"
+    exit 1
+  fi
+
+  # Validate email format
+  if [[ ! $email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    print_error "Invalid email format. Please provide a valid email address"
+    exit 1
+  fi
   
-  # Sprawdź pliki w bieżącym katalogu
-  if [ -f "$CURRENT_DIR/Dockerfile" ] && [ -f "$CURRENT_DIR/docker-compose.yml" ]; then
-    print_message "Found project files in current directory. Copying to $PROJECT_DIR..."
+  print_message "Deploying application with domain: $domain and email: $email"
+  
+  # Set domain and email for later use
+  DOMAIN_NAME=$domain
+  EMAIL=$email
+  
+  # Continue with deployment process
+  prepare_files
+  configure_nginx
+  generate_ssl_certificate
+  start_containers
+  
+  print_message "Deployment completed successfully!"
+  print_message "Your Dockabase application is now running at https://$DOMAIN_NAME"
+  print_message "SSL certificates will be automatically renewed"
+}
+
+start_containers() {
+  print_message "Starting containers..."
+  docker compose up -d --build
+  print_message "Containers started successfully"
+  docker compose ps
+}
+
+stop_containers() {
+  print_message "Stopping containers..."
+  docker compose down
+  print_message "Containers stopped successfully"
+}
+
+restart_containers() {
+  print_message "Restarting containers..."
+  docker compose restart
+  print_message "Containers restarted successfully"
+  docker compose ps
+}
+
+show_status() {
+  print_message "Container status:"
+  docker compose ps
+}
+
+show_logs() {
+  print_message "Container logs:"
+  docker compose logs
+}
+
+prepare_files() {
+  # This function prepares the project files
+  # It will be called by deploy_app
+  
+  # Check if user is in docker group
+  if ! groups | grep -q '\bdocker\b'; then
+    print_error "Current user is not in the docker group. Please run setup-system.sh first."
+    print_error "After adding yourself to the docker group, log out and log back in before running this script."
+    exit 1
+  fi
+  
+  # Continue with file preparation
+  # (This part will be implemented later)
+}
+
+configure_nginx() {
+  # This function configures Nginx with the domain
+  print_message "Configuring Nginx for domain: $DOMAIN_NAME..."
+
+  # Check if we have an existing Nginx configuration template
+  if [ -f "docker/nginx/default.conf.template" ]; then
+    print_message "Found Nginx configuration template. Using it as base..."
+    mkdir -p docker/nginx
+    cp "docker/nginx/default.conf.template" "docker/nginx/default.conf"
     
-    # Create necessary directories
-    mkdir -p $PROJECT_DIR/docker/nginx/certbot/conf
-    mkdir -p $PROJECT_DIR/docker/nginx/certbot/www
+    # Replace domain placeholders with actual domain
+    sed -i "s/dockabase\.com/$DOMAIN_NAME/g" "docker/nginx/default.conf"
+    sed -i "s/www\.dockabase\.com/www.$DOMAIN_NAME/g" "docker/nginx/default.conf"
     
-    # Copy all project files to the deployment directory
-    cp -r $CURRENT_DIR/* $PROJECT_DIR/
-    cp -r $CURRENT_DIR/.* $PROJECT_DIR/ 2>/dev/null || true
-    
-    print_message "Project files copied successfully."
-  # Sprawdź pliki w katalogu skryptu
-  elif [ -f "$SCRIPT_DIR/Dockerfile" ] && [ -f "$SCRIPT_DIR/docker-compose.yml" ]; then
-    print_message "Found project files in script directory. Copying to $PROJECT_DIR..."
-    
-    # Create necessary directories
-    mkdir -p $PROJECT_DIR/docker/nginx/certbot/conf
-    mkdir -p $PROJECT_DIR/docker/nginx/certbot/www
-    
-    # Copy all project files to the deployment directory
-    cp -r $SCRIPT_DIR/* $PROJECT_DIR/
-    cp -r $SCRIPT_DIR/.* $PROJECT_DIR/ 2>/dev/null || true
-    
-    print_message "Project files copied successfully."
+    print_message "Nginx configuration updated with domain: $DOMAIN_NAME"
   else
-    print_error "Project files not found in the script directory."
-    print_message "Please copy all project files to $PROJECT_DIR manually, including:"
-    print_message "- Dockerfile"
-    print_message "- docker-compose.yml"
-    print_message "- src/ directory"
-    print_message "- package.json and other configuration files"
-    print_message "Then run this script again with the --skip-download flag:"
-    print_message "./deploy-app.sh --skip-download $DOMAIN_NAME $EMAIL"
-    exit 1
+    # If no template exists, check for the default.conf file
+    if [ -f "docker/nginx/default.conf" ]; then
+      print_message "Found existing Nginx configuration. Updating domain..."
+      
+      # Create a backup of the original file
+      cp "docker/nginx/default.conf" "docker/nginx/default.conf.bak"
+      
+      # Replace domain in the existing file
+      sed -i "s/server_name .*\$/server_name $DOMAIN_NAME www.$DOMAIN_NAME;/g" "docker/nginx/default.conf"
+      sed -i "s/ssl_certificate .*\/fullchain\.pem;/ssl_certificate \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/fullchain.pem;/g" "docker/nginx/default.conf"
+      sed -i "s/ssl_certificate_key .*\/privkey\.pem;/ssl_certificate_key \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/privkey.pem;/g" "docker/nginx/default.conf"
+      
+      print_message "Existing Nginx configuration updated with domain: $DOMAIN_NAME"
+    else
+      print_message "No Nginx configuration found. Creating one with domain: $DOMAIN_NAME"
+      mkdir -p docker/nginx
+      
+      # Create the Nginx configuration from scratch
+      cat > docker/nginx/default.conf << EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    server_tokens off;
+
+    # Redirect all HTTP requests to HTTPS
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+
+    # Let's Encrypt verification
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    server_tokens off;
+
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    # Diffie-Hellman parameter for DHE ciphersuites
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Intermediate configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers off;
+
+    # HSTS (ngx_http_headers_module is required)
+    add_header Strict-Transport-Security "max-age=63072000" always;
+
+    # OCSP Stapling
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    # Root directory and index files
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
+
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # Main location block
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # Error pages
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}
+EOF
+    fi
   fi
-else
-  print_message "Skipping file download/copy as requested."
+}
+
+generate_ssl_certificate() {
+  # This function generates SSL certificates using Let's Encrypt
+  print_message "Generating SSL certificate for domain: $DOMAIN_NAME..."
   
-  # Check if necessary files exist
-  if [ ! -f "$PROJECT_DIR/Dockerfile" ]; then
-    print_error "Dockerfile not found in $PROJECT_DIR"
-    print_error "Please make sure all project files are copied to $PROJECT_DIR"
-    exit 1
-  fi
+  # Create necessary directories for certbot
+  mkdir -p docker/nginx/certbot/conf
+  mkdir -p docker/nginx/certbot/www
   
-  # Create necessary directories if they don't exist
-  mkdir -p $PROJECT_DIR/docker/nginx/certbot/conf
-  mkdir -p $PROJECT_DIR/docker/nginx/certbot/www
-fi
+  # Start Nginx container for initial certificate generation
+  print_message "Starting Nginx container for SSL certificate generation..."
+  docker compose up -d nginx
+  
+  # Wait for Nginx to start
+  print_message "Waiting for Nginx to start..."
+  sleep 5
+  
+  # Generate SSL certificate with Let's Encrypt
+  print_message "Requesting certificate from Let's Encrypt..."
+  docker compose run --rm certbot certbot certonly --webroot --webroot-path=/var/www/certbot \
+    --email $EMAIL --agree-tos --no-eff-email \
+    -d $DOMAIN_NAME -d www.$DOMAIN_NAME
+  
+  # Restart Nginx to apply SSL configuration
+  print_message "Restarting Nginx to apply SSL configuration..."
+  docker compose restart nginx
+  
+  print_message "SSL certificate generated successfully"
+}
+
+# Parse command line arguments
+COMMAND=${1:-"help"}
+shift || true
+
+case "$COMMAND" in
+  deploy)
+    if [ -z "$1" ] || [ -z "$2" ]; then
+      print_error "Missing arguments for deploy command"
+      print_message "Usage: ./deploy-app.sh deploy domain.com email@example.com"
+      exit 1
+    fi
+    deploy_app "$1" "$2"
+    ;;
+  start)
+    start_containers
+    ;;
+  stop)
+    stop_containers
+    ;;
+  restart)
+    restart_containers
+    ;;
+  status)
+    show_status
+    ;;
+  logs)
+    show_logs
+    ;;
+  help|*)
+    print_message "Dockabase Application Management Script"
+    print_message "Usage:"
+    print_message "  ./deploy-app.sh deploy domain.com email@example.com  - Deploy application with SSL"
+    print_message "  ./deploy-app.sh start                               - Start containers"
+    print_message "  ./deploy-app.sh stop                                - Stop containers"
+    print_message "  ./deploy-app.sh restart                             - Restart containers"
+    print_message "  ./deploy-app.sh status                              - Show container status"
+    print_message "  ./deploy-app.sh logs                                - Show container logs"
+    exit 0
+    ;;
+esac
 
 # Update Nginx configuration with the correct domain name
 print_message "Configuring Nginx for domain: $DOMAIN_NAME..."

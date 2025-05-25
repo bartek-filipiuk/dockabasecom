@@ -91,7 +91,7 @@ usermod -aG docker $USERNAME
 print_message "User added to docker group. You'll need to log out and back in for this to take effect."
 
 # Create project directory with proper permissions
-PROJECT_DIR="/opt/dockabase"
+PROJECT_DIR="/var/www/dockabase"
 print_message "Creating project directory at $PROJECT_DIR..."
 mkdir -p $PROJECT_DIR
 chown -R $USERNAME:$USERNAME $PROJECT_DIR
