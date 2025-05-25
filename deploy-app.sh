@@ -34,39 +34,53 @@ print_error() {
   echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Define functions for container management
-deploy_app() {
+# Check if user is in docker group
+check_docker_permissions() {
+  if ! groups | grep -q docker; then
+    print_warning "You are not in the docker group. You may need to use sudo."
+  fi
+}
+
+# Validate domain name format
+validate_domain() {
   local domain=$1
-  local email=$2
-  
-  # Validate domain name format
   if [[ ! $domain =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
     print_error "Invalid domain name format. Please use a valid domain (e.g., example.com)"
     exit 1
   fi
+}
 
-  # Validate email format
+# Validate email format
+validate_email() {
+  local email=$1
   if [[ ! $email =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
     print_error "Invalid email format. Please provide a valid email address"
     exit 1
   fi
-  
-  print_message "Deploying application with domain: $domain and email: $email"
-  
-  # Set domain and email for later use
-  DOMAIN_NAME=$domain
-  EMAIL=$email
-  
-  # Continue with deployment process
-  prepare_files
-  configure_caddy
-  start_containers
-  
-  print_message "Deployment completed successfully!"
-  print_message "Your Dockabase application is now running at https://$DOMAIN_NAME"
-  print_message "Caddy automatically handles SSL certificates and their renewal"
 }
 
+# Check required files
+check_required_files() {
+  # Check if Dockerfile exists
+  if [ ! -f "Dockerfile" ]; then
+    print_error "Dockerfile not found. Please make sure you are in the correct directory."
+    exit 1
+  fi
+  
+  # Check if docker-compose.yml exists
+  if [ ! -f "docker-compose.yml" ]; then
+    print_error "docker-compose.yml not found. Please make sure you are in the correct directory."
+    exit 1
+  fi
+  
+  # Check if Caddyfile exists
+  if [ ! -f "Caddyfile" ]; then
+    print_error "Caddyfile not found. Please make sure you are in the correct directory."
+    exit 1
+  fi
+}
+
+# Start containers
 start_containers() {
   print_message "Starting containers..."
   docker compose up -d --build
@@ -74,53 +88,15 @@ start_containers() {
   docker compose ps
 }
 
+# Stop containers
 stop_containers() {
   print_message "Stopping containers..."
   docker compose down
   print_message "Containers stopped successfully"
 }
 
-restart_containers() {
-  print_message "Restarting containers..."
-  docker compose restart
-  print_message "Containers restarted successfully"
-  docker compose ps
-}
-
-show_status() {
-  print_message "Container status:"
-  docker compose ps
-}
-
-show_logs() {
-  print_message "Container logs:"
-  docker compose logs
-}
-
-prepare_files() {
-  # This function prepares the project files for Caddy deployment
-  # It will be called by deploy_app
-  
-  # Check if user is in docker group
-  if ! groups | grep -q '\bdocker\b'; then
-    print_error "Current user is not in the docker group. Please run setup-system.sh first."
-    print_error "After adding yourself to the docker group, log out and log back in before running this script."
-    exit 1
-  fi
-  
-  # Check if Dockerfile exists
-  if [ ! -f "Dockerfile" ]; then
-    print_error "Dockerfile not found in the current directory."
-    print_error "Please make sure you are in the project directory."
-    exit 1
-  fi
-  
-  # Check if docker-compose.yml exists
-  if [ ! -f "docker-compose.yml" ]; then
-    print_message "docker-compose.yml not found. Creating one..."
-    # This will be created by the configure_caddy function
-  fi
-  
+# Build application if needed
+build_application() {
   # Create dist directory if it doesn't exist
   if [ ! -d "dist" ]; then
     print_message "Creating dist directory..."
@@ -133,112 +109,144 @@ prepare_files() {
     
     # Build the application inside a temporary Node container
     print_message "Running build in Docker container..."
-    docker run --rm -v "$(pwd):/app" -w /app node:18 sh -c "npm install && npm run build"
+    docker run --rm -v "$(pwd):/app" -w /app node:22 sh -c "npm install && npm run build"
     
     # Check if build was successful
     if [ ! -f "dist/index.html" ]; then
       print_error "Build failed. Check for errors above."
       exit 1
     fi
+    
+    print_message "Application built successfully"
+  else
+    print_message "Application already built or does not require building"
   fi
+}
+
+# Update domain in Caddyfile
+update_caddyfile() {
+  local domain=$1
+  local email=$2
   
-  print_message "File preparation completed"
+  print_message "Updating Caddyfile for domain: $domain..."
+  
+  # Update email in Caddyfile
+  sed -i "s/email .*/email $email/" Caddyfile
+  
+  # Update domain in Caddyfile
+  sed -i "s/^[a-zA-Z0-9][a-zA-Z0-9.-]* {/$domain {/" Caddyfile
+  
+  # Update www redirect
+  sed -i "s/redir www\.[a-zA-Z0-9][a-zA-Z0-9.-]*\//redir www.$domain\//" Caddyfile
+  
+  print_message "Caddyfile has been updated"
 }
 
-configure_caddy() {
-  # This function configures Caddy with the domain
-  print_message "Configuring Caddy for domain: $DOMAIN_NAME..."
+# Deploy the application
+deploy_app() {
+  if [ -z "$1" ] || [ -z "$2" ]; then
+    print_error "Missing arguments for deploy command"
+    print_message "Usage: $0 deploy <domain_name> <email>"
+    exit 1
+  fi
 
-  # Create Caddyfile with domain configuration
-  print_message "Creating Caddyfile for domain: $DOMAIN_NAME"
-  cat > Caddyfile << EOF
-{
-    # Global settings
-    email $EMAIL
-    # Automatic HTTP to HTTPS redirection
-    auto_https on
+  local domain=$1
+  local email=$2
+
+  # Validate domain and email
+  validate_domain "$domain"
+  validate_email "$email"
+
+  # Check required files
+  check_required_files
+  
+  # Build application
+  build_application
+  
+  # Update Caddyfile
+  update_caddyfile "$domain" "$email"
+
+  # Start the application
+  print_message "Starting the application..."
+  docker compose up -d --build
+
+  print_message "Deployment completed successfully!"
+  print_message "Your application is now available at https://$domain"
+  print_message "SSL certificates are automatically managed by Caddy"
 }
 
-# Main domain configuration
-$DOMAIN_NAME {
-    # Static files directory
-    root * /srv/www
-    
-    # Serve files
-    file_server
-    
-    # Compression
-    encode gzip
-    
-    # Redirect www to non-www
-    redir www.$DOMAIN_NAME/* https://$DOMAIN_NAME{uri} permanent
-    
-    # Security headers
-    header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-    }
-    
-    # SPA (Single Page Application) handling
-    try_files {path} /index.html
-    
-    # Cache for static files
-    @static {
-        path *.css *.js *.ico *.gif *.jpg *.jpeg *.png *.svg *.woff *.woff2
-    }
-    header @static Cache-Control "public, max-age=31536000, immutable"
-}
-EOF
-
-  print_message "Caddy configuration completed for domain: $DOMAIN_NAME"
+# Start the application
+start_app() {
+  check_required_files
+  print_message "Starting the application..."
+  docker compose up -d
+  print_message "Application started"
 }
 
-# The prepare_files function has been updated to handle Caddy instead of Nginx
+# Stop the application
+stop_app() {
+  print_message "Stopping the application..."
+  docker compose down
+  print_message "Application stopped"
+}
 
-# Parse command line arguments
-COMMAND=${1:-"help"}
-shift || true
+# Restart the application
+restart_app() {
+  print_message "Restarting the application..."
+  docker compose restart
+  print_message "Application restarted"
+}
 
-case "$COMMAND" in
-  deploy)
-    if [ -z "$1" ] || [ -z "$2" ]; then
-      print_error "Missing arguments for deploy command"
-      print_message "Usage: ./deploy-app.sh deploy domain.com email@example.com"
+# Show application status
+show_status() {
+  print_message "Application status:"
+  docker compose ps
+}
+
+# Show application logs
+show_logs() {
+  print_message "Application logs:"
+  docker compose logs -f
+}
+
+# Main function
+main() {
+  # Check Docker permissions
+  check_docker_permissions
+
+  # Process command
+  case "$1" in
+    deploy)
+      deploy_app "$2" "$3"
+      ;;
+    start)
+      start_app
+      ;;
+    stop)
+      stop_app
+      ;;
+    restart)
+      restart_app
+      ;;
+    status)
+      show_status
+      ;;
+    logs)
+      show_logs
+      ;;
+    *)
+      print_message "Usage: $0 <command> [options]"
+      print_message "Commands:"
+      print_message "  deploy <domain_name> <email>  - Deploy the application"
+      print_message "  start                        - Start the application"
+      print_message "  stop                         - Stop the application"
+      print_message "  restart                      - Restart the application"
+      print_message "  status                       - Show application status"
+      print_message "  logs                         - Show application logs"
       exit 1
-    fi
-    deploy_app "$1" "$2"
-    ;;
-  start)
-    start_containers
-    ;;
-  stop)
-    stop_containers
-    ;;
-  restart)
-    restart_containers
-    ;;
-  status)
-    show_status
-    ;;
-  logs)
-    show_logs
-    ;;
-  help|*)
-    print_message "Dockabase Application Management Script"
-    print_message "Usage:"
-    print_message "  ./deploy-app.sh deploy domain.com email@example.com  - Deploy application with SSL"
-    print_message "  ./deploy-app.sh start                               - Start containers"
-    print_message "  ./deploy-app.sh stop                                - Stop containers"
-    print_message "  ./deploy-app.sh restart                             - Restart containers"
-    print_message "  ./deploy-app.sh status                              - Show container status"
-    print_message "  ./deploy-app.sh logs                                - Show container logs"
-    exit 0
-    ;;
-esac
+      ;;
+  esac
+}
 
-# Check if services are running
-docker compose ps
-
-print_message "To view logs, run: cd $PROJECT_DIR && docker compose logs -f"
+# Run the script
+main "$@"
