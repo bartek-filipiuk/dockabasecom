@@ -18,6 +18,14 @@ dockabase.com {
     # Serve files
     file_server
     
+    # Handle URLs without trailing slash
+    @noTrailingSlash {
+        not path */
+        not path *.* 
+        file {path}/index.html
+    }
+    rewrite @noTrailingSlash {path}/
+    
     # Compression
     encode zstd gzip
     
