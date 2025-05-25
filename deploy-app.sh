@@ -81,28 +81,94 @@ fi
 # Navigate to project directory
 cd $PROJECT_DIR
 
-# Clone the repository or download the project files
-print_message "Downloading Dockabase files..."
-if [ -d ".git" ]; then
-  git pull
-else
-  # If not cloning from a repository, you can download and extract a release
-  # or copy the files from your local machine to the server
-  print_message "Copying project files to $PROJECT_DIR..."
-  # This is a placeholder - you'll need to provide the actual files
-  # For example, you might use scp or rsync to copy files from your local machine
-  print_warning "Please copy your project files to $PROJECT_DIR manually"
-  print_warning "Then run this script again with the --skip-download flag"
+# Check for skip-download flag
+SKIP_DOWNLOAD=false
+if [ "$1" == "--skip-download" ]; then
+  SKIP_DOWNLOAD=true
+  # Shift arguments so domain becomes $1 and email becomes $2
+  shift
+  DOMAIN_NAME=$1
+  EMAIL=$2
+fi
+
+# Clone the repository or copy project files
+if [ "$SKIP_DOWNLOAD" = false ]; then
+  print_message "Checking for project files..."
   
-  # For demonstration, we'll create basic structure
-  mkdir -p docker/nginx/certbot/conf
-  mkdir -p docker/nginx/certbot/www
+  # Check if we're running from the project directory and can copy files
+  SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+  if [ -f "$SCRIPT_DIR/Dockerfile" ] && [ -f "$SCRIPT_DIR/docker-compose.yml" ]; then
+    print_message "Found project files in script directory. Copying to $PROJECT_DIR..."
+    
+    # Create necessary directories
+    mkdir -p $PROJECT_DIR/docker/nginx/certbot/conf
+    mkdir -p $PROJECT_DIR/docker/nginx/certbot/www
+    
+    # Copy all project files to the deployment directory
+    cp -r $SCRIPT_DIR/* $PROJECT_DIR/
+    cp -r $SCRIPT_DIR/.* $PROJECT_DIR/ 2>/dev/null || true
+    
+    print_message "Project files copied successfully."
+  else
+    print_error "Project files not found in the script directory."
+    print_message "Please copy all project files to $PROJECT_DIR manually, including:"
+    print_message "- Dockerfile"
+    print_message "- docker-compose.yml"
+    print_message "- src/ directory"
+    print_message "- package.json and other configuration files"
+    print_message "Then run this script again with the --skip-download flag:"
+    print_message "./deploy-app.sh --skip-download $DOMAIN_NAME $EMAIL"
+    exit 1
+  fi
+else
+  print_message "Skipping file download/copy as requested."
+  
+  # Check if necessary files exist
+  if [ ! -f "$PROJECT_DIR/Dockerfile" ]; then
+    print_error "Dockerfile not found in $PROJECT_DIR"
+    print_error "Please make sure all project files are copied to $PROJECT_DIR"
+    exit 1
+  fi
+  
+  # Create necessary directories if they don't exist
+  mkdir -p $PROJECT_DIR/docker/nginx/certbot/conf
+  mkdir -p $PROJECT_DIR/docker/nginx/certbot/www
 fi
 
 # Update Nginx configuration with the correct domain name
 print_message "Configuring Nginx for domain: $DOMAIN_NAME..."
-mkdir -p docker/nginx
-cat > docker/nginx/default.conf << EOF
+
+# Check if we have an existing Nginx configuration template
+if [ -f "$PROJECT_DIR/docker/nginx/default.conf.template" ]; then
+  print_message "Found Nginx configuration template. Using it as base..."
+  mkdir -p docker/nginx
+  cp "$PROJECT_DIR/docker/nginx/default.conf.template" "$PROJECT_DIR/docker/nginx/default.conf"
+  
+  # Replace domain placeholders with actual domain
+  sed -i "s/dockabase\.com/$DOMAIN_NAME/g" "$PROJECT_DIR/docker/nginx/default.conf"
+  sed -i "s/www\.dockabase\.com/www.$DOMAIN_NAME/g" "$PROJECT_DIR/docker/nginx/default.conf"
+  
+  print_message "Nginx configuration updated with domain: $DOMAIN_NAME"
+else
+  # If no template exists, check for the default.conf file
+  if [ -f "$PROJECT_DIR/docker/nginx/default.conf" ]; then
+    print_message "Found existing Nginx configuration. Updating domain..."
+    
+    # Create a backup of the original file
+    cp "$PROJECT_DIR/docker/nginx/default.conf" "$PROJECT_DIR/docker/nginx/default.conf.bak"
+    
+    # Replace domain in the existing file
+    sed -i "s/server_name .*\$/server_name $DOMAIN_NAME www.$DOMAIN_NAME;/g" "$PROJECT_DIR/docker/nginx/default.conf"
+    sed -i "s/ssl_certificate .*\/fullchain\.pem;/ssl_certificate \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/fullchain.pem;/g" "$PROJECT_DIR/docker/nginx/default.conf"
+    sed -i "s/ssl_certificate_key .*\/privkey\.pem;/ssl_certificate_key \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/privkey.pem;/g" "$PROJECT_DIR/docker/nginx/default.conf"
+    
+    print_message "Existing Nginx configuration updated with domain: $DOMAIN_NAME"
+  else
+    print_message "No Nginx configuration found. Creating one with domain: $DOMAIN_NAME"
+    mkdir -p docker/nginx
+    
+    # Create the Nginx configuration from scratch
+    cat > docker/nginx/default.conf << EOF
 server {
     listen 80;
     listen [::]:80;
@@ -180,10 +246,21 @@ server {
     }
 }
 EOF
+  fi
+fi
 
-# Create docker-compose.yml file
-print_message "Creating Docker Compose configuration..."
-cat > docker-compose.yml << EOF
+# Check for existing docker-compose.yml file
+print_message "Checking Docker Compose configuration..."
+if [ -f "$PROJECT_DIR/docker-compose.yml" ]; then
+  print_message "Found existing docker-compose.yml file. Using it..."
+  
+  # Check if we need to update any domain-specific settings in the docker-compose file
+  # This is usually not necessary, but we could add it if needed
+  
+  print_message "Using existing Docker Compose configuration"
+else
+  print_message "No docker-compose.yml found. Creating one..."
+  cat > docker-compose.yml << EOF
 services:
   astro:
     build:
@@ -225,6 +302,8 @@ networks:
   dockabase-network:
     driver: bridge
 EOF
+  print_message "Docker Compose configuration created"
+fi
 
 # Create initial SSL certificate
 print_message "Preparing for SSL certificate generation..."
