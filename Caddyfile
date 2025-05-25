@@ -5,6 +5,11 @@
     # No need to specify auto_https as it's the default behavior
 }
 
+# Redirect www to non-www
+www.dockabase.com {
+    redir https://dockabase.com{uri} permanent
+}
+
 # Main domain configuration
 dockabase.com {
     # Static files directory
@@ -15,9 +20,6 @@ dockabase.com {
     
     # Compression
     encode gzip
-    
-    # Redirect www to non-www
-    redir www.dockabase.com/* https://dockabase.com{uri} permanent
     
     # Security headers
     header {

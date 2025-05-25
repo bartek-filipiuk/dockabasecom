@@ -133,11 +133,14 @@ update_caddyfile() {
   # Update email in Caddyfile
   sed -i "s/email .*/email $email/" Caddyfile
   
-  # Update domain in Caddyfile
-  sed -i "s/^[a-zA-Z0-9][a-zA-Z0-9.-]* {/$domain {/" Caddyfile
+  # Update main domain in Caddyfile
+  sed -i "s/^dockabase\.com {/$domain {/" Caddyfile
   
-  # Update www redirect
-  sed -i "s/redir www\.[a-zA-Z0-9][a-zA-Z0-9.-]*\//redir www.$domain\//" Caddyfile
+  # Update www subdomain in Caddyfile
+  sed -i "s/^www\.dockabase\.com {/www.$domain {/" Caddyfile
+  
+  # Update redirect URL in www block
+  sed -i "s/redir https:\/\/dockabase\.com/redir https:\/\/$domain/" Caddyfile
 
   print_message "Caddyfile has been updated"
 }
