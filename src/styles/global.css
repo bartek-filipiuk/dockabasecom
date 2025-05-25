@@ -40,32 +40,24 @@ code, pre {
   font-feature-settings: "liga" 0;
 }
 
-/* Improved code blocks - Tailwind CSS @apply directives */
-/* These directives are processed by the Tailwind CSS compiler */
+/* Code blocks */
 .code-block {
-  @apply bg-dark-800 p-4 rounded-lg overflow-x-auto my-4 border border-dark-700 w-full max-w-full;
+  @apply bg-dark-900 p-4 rounded-lg overflow-x-auto my-4 border border-dark-700 w-full max-w-full;
   position: relative;
 }
 
 .code-block pre {
-  @apply text-sm leading-relaxed w-full max-w-full;
+  @apply text-sm w-full max-w-full;
   tab-size: 2;
-  white-space: pre-wrap;
-  word-break: break-word;
+  margin: 0;
 }
 
 .code-block code {
-  @apply text-gray-200 whitespace-pre-wrap break-words;
+  @apply text-gray-200;
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  line-height: 1.5;
 }
-
-/* Syntax highlighting classes - Tailwind CSS @apply directives */
-/* These directives are processed by the Tailwind CSS compiler */
-.code-block .keyword { @apply text-purple-400; }
-.code-block .string { @apply text-green-400; }
-.code-block .comment { @apply text-gray-500; }
-.code-block .number { @apply text-yellow-400; }
-.code-block .operator { @apply text-blue-400; }
-.code-block .function { @apply text-blue-300; }
 
 /* Button styling - Tailwind CSS @apply directives */
 .copy-button {

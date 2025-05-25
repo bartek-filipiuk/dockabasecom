@@ -6,24 +6,16 @@ interface Props {
 }
 
 const { command, language = "bash", title } = Astro.props;
-
-// Function to format command for display
-function formatCommand(cmd: string) {
-  // Replace common patterns with syntax highlighting spans
-  return cmd
-    .replace(/\$\s*([^\s;]+)/g, '$<span class="keyword">$</span> <span class="function">$1</span>')
-    .replace(/("[^"]*")/g, '<span class="string">$1</span>')
-    .replace(/('[^']*')/g, '<span class="string">$1</span>')
-    .replace(/(\d+)/g, '<span class="number">$1</span>')
-    .replace(/(\-\-[a-zA-Z0-9\-]+)/g, '<span class="operator">$1</span>');
-}
-
-const formattedCommand = formatCommand(command);
+---
 ---
 
 <div class="relative code-block group w-full max-w-full">
   {title && <div class="text-xs text-gray-400 absolute top-2 left-4">{title}</div>}
-  <pre class="language-{language} overflow-x-auto pt-6 w-full max-w-full"><code set:html={formattedCommand} class="whitespace-pre-wrap break-words" /></pre>
+  <pre class="language-{language} overflow-x-auto pt-6 w-full max-w-full">
+    <code class="bash-code">
+{command}
+    </code>
+  </pre>
   <button
     class="copy-button"
     data-command={command}
