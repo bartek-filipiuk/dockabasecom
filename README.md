@@ -1,8 +1,7 @@
 # Dockabase
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Astro](https://img.shields.io/badge/Astro-4.6.3-orange.svg)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4.1-blue.svg)
+![Astro](https://img.shields.io/badge/Astro-5.8.0-orange.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-22-orange.svg)
 
 Dockabase is an open-source project that enables developers to quickly set up and use the Qdrant vector database in a Docker container environment. This project provides a ready-to-use docker-compose.yml configuration, simple tutorials, and a set of useful commands.
