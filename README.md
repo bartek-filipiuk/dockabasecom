@@ -1,45 +1,72 @@
-# Dockabase
+# Dockabase Website
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Astro](https://img.shields.io/badge/Astro-5.8.0-orange.svg)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4.1-blue.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-22-orange.svg)
 
-Dockabase is an open-source project that enables developers to quickly set up and use the Qdrant vector database in a Docker container environment. This project provides a ready-to-use docker-compose.yml configuration, simple tutorials, and a set of useful commands.
+This repository contains the source code for the Dockabase informational website. The site provides documentation, tutorials, and guides for using the Dockabase project, which helps developers set up and use the Qdrant vector database in a Docker environment.
+
+## About This Repository
+
+This is the website codebase only, not the actual Qdrant implementation. The Qdrant implementation can be found in a separate repository.
 
 ## Features
 
-- Pre-configured Docker setup for Qdrant vector database
-- Simple and elegant documentation website
-- Step-by-step tutorials for Qdrant API usage
-- Troubleshooting guides and FAQ
-- Deployment instructions including domain and SSL configuration
+- Modern, responsive documentation website
+- Dark theme with Tailwind CSS
+- Step-by-step guides for Dockabase usage
+- Deployment instructions for various environments
+- FAQ and troubleshooting sections
 
 ## Tech Stack
 
-- **Frontend**: [Astro](https://astro.build/) v5.8.0 with [Tailwind CSS](https://tailwindcss.com/) v3.4.1 on [Node.js](https://nodejs.org/) v22
+- **Framework**: [Astro](https://astro.build/) v5.8.0
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) v3.4.1
 - **Content**: Markdown (MDX) with @astrojs/mdx v4.3.0
-- **Containerization**: Docker and Docker Compose
-- **Web Server**: Nginx
-- **Hosting**: DigitalOcean VPS with Ubuntu
-- **SSL**: Let's Encrypt
-- **CI/CD**: GitHub Actions
+- **Runtime**: [Node.js](https://nodejs.org/) v22
+- **Deployment**: Docker, Docker Compose, Nginx
 
 ## Development
 
 ### Prerequisites
 
+- Node.js v22 or higher
+- npm or yarn
 - Docker and Docker Compose
 - Git
 
 ### Local Development
 
-1. Clone this repository
+#### Option 1: Native Development
+
+1. Clone the repository:
    ```bash
-   git clone https://github.com/bartek-filipiuk/qdrant_caddy.git
+   git clone https://github.com/yourusername/dockabase.com.git
    cd dockabase.com
    ```
 
-2. Start the development environment with Docker
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser and visit `http://localhost:4321`
+
+#### Option 2: Docker Development
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/dockabase.com.git
+   cd dockabase.com
+   ```
+
+2. Start the development environment with Docker:
    ```bash
    docker-compose -f docker-compose.dev.yml up
    ```
@@ -48,13 +75,35 @@ Dockabase is an open-source project that enables developers to quickly set up an
 
 ### Building for Production
 
+#### Local Build
+
+```bash
+npm run build
+```
+
+The built site will be in the `dist/` directory.
+
+#### Docker Production Build
+
 ```bash
 docker-compose -f docker-compose.yml up --build
 ```
 
 ## Deployment
 
-See the [Deployment documentation](https://dockabase.com/deployment) for detailed instructions on deploying to a VPS.
+The website can be deployed to a VPS like DigitalOcean using the included Docker configuration:
+
+1. Use the `install.sh` script for automated deployment:
+   ```bash
+   ./install.sh yourdomain.com your@email.com
+   ```
+
+2. This will set up:
+   - Nginx web server
+   - SSL certificates via Let's Encrypt
+   - Automatic certificate renewal
+
+For detailed deployment instructions, refer to the `deployment.md` file.
 
 ## License
 
