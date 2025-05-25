@@ -17,8 +17,8 @@ Dockabase is an open-source project that enables developers to quickly set up an
 
 ## Tech Stack
 
-- **Frontend**: [Astro](https://astro.build/) v4.6.3 with [Tailwind CSS](https://tailwindcss.com/) v3.4.1 on [Node.js](https://nodejs.org/) v22
-- **Content**: Markdown (MDX) with @astrojs/mdx
+- **Frontend**: [Astro](https://astro.build/) v5.8.0 with [Tailwind CSS](https://tailwindcss.com/) v3.4.1 on [Node.js](https://nodejs.org/) v22
+- **Content**: Markdown (MDX) with @astrojs/mdx v4.3.0
 - **Containerization**: Docker and Docker Compose
 - **Web Server**: Nginx
 - **Hosting**: DigitalOcean VPS with Ubuntu
