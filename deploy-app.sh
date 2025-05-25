@@ -237,6 +237,36 @@ generate_ssl_certificate() {
   mkdir -p docker/nginx/certbot/conf
   mkdir -p docker/nginx/certbot/www
   
+  # Create a temporary HTTP-only Nginx configuration
+  print_message "Creating temporary HTTP-only Nginx configuration..."
+  
+  # Backup the original configuration if it exists
+  if [ -f "docker/nginx/default.conf" ]; then
+    cp docker/nginx/default.conf docker/nginx/default.conf.ssl.bak
+  fi
+  
+  # Create HTTP-only configuration
+  cat > docker/nginx/default.conf << EOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
+    server_tokens off;
+
+    # Let's Encrypt verification
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    # Serve static content
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+    }
+}
+EOF
+  
   # Start Nginx container for initial certificate generation
   print_message "Starting Nginx container for SSL certificate generation..."
   docker compose up -d nginx
@@ -250,6 +280,16 @@ generate_ssl_certificate() {
   docker compose run --rm certbot certbot certonly --webroot --webroot-path=/var/www/certbot \
     --email $EMAIL --agree-tos --no-eff-email \
     -d $DOMAIN_NAME -d www.$DOMAIN_NAME
+  
+  # Restore the original SSL configuration
+  if [ -f "docker/nginx/default.conf.ssl.bak" ]; then
+    print_message "Restoring SSL configuration..."
+    cp docker/nginx/default.conf.ssl.bak docker/nginx/default.conf
+  else
+    # Create a new SSL configuration
+    print_message "Creating SSL configuration..."
+    configure_nginx
+  fi
   
   # Restart Nginx to apply SSL configuration
   print_message "Restarting Nginx to apply SSL configuration..."
