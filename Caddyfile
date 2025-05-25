@@ -1,0 +1,38 @@
+{
+    # Global settings
+    email your-email@example.com
+    # Automatic HTTP to HTTPS redirection
+    auto_https on
+}
+
+# Main domain configuration
+dockabase.com {
+    # Static files directory
+    root * /srv/www
+    
+    # Serve files
+    file_server
+    
+    # Compression
+    encode gzip
+    
+    # Redirect www to non-www
+    redir www.dockabase.com/* https://dockabase.com{uri} permanent
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    
+    # SPA (Single Page Application) handling
+    try_files {path} /index.html
+    
+    # Cache for static files
+    @static {
+        path *.css *.js *.ico *.gif *.jpg *.jpeg *.png *.svg *.woff *.woff2
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+}

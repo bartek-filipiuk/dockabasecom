@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Dockabase Application Deployment Script
-# This script deploys and manages the Dockabase application with SSL support
+# This script deploys and manages the Dockabase application with SSL support using Caddy
 # Can be run as a regular user (who is in the docker group)
 #
 # Usage:
@@ -59,13 +59,12 @@ deploy_app() {
   
   # Continue with deployment process
   prepare_files
-  configure_nginx
-  generate_ssl_certificate
+  configure_caddy
   start_containers
   
   print_message "Deployment completed successfully!"
   print_message "Your Dockabase application is now running at https://$DOMAIN_NAME"
-  print_message "SSL certificates will be automatically renewed"
+  print_message "Caddy automatically handles SSL certificates and their renewal"
 }
 
 start_containers() {
@@ -99,7 +98,7 @@ show_logs() {
 }
 
 prepare_files() {
-  # This function prepares the project files
+  # This function prepares the project files for Caddy deployment
   # It will be called by deploy_app
   
   # Check if user is in docker group
@@ -109,347 +108,86 @@ prepare_files() {
     exit 1
   fi
   
-  # Continue with file preparation
-  # (This part will be implemented later)
-}
-
-configure_nginx() {
-  # This function configures Nginx with the domain
-  print_message "Configuring Nginx for domain: $DOMAIN_NAME..."
-
-  # Check if SSL certificates exist
-  local ssl_exists=false
-  if [ -d "docker/nginx/certbot/conf/live/$DOMAIN_NAME" ]; then
-    print_message "SSL certificates found for domain: $DOMAIN_NAME"
-    ssl_exists=true
-  else
-    print_message "No SSL certificates found. Configuring for HTTP only initially."
-    print_message "HTTPS will be enabled after certificate generation."
-  fi
-
-  # Check if we have an existing Nginx configuration template
-  if [ -f "docker/nginx/default.conf.template" ]; then
-    print_message "Found Nginx configuration template. Using it as base..."
-    mkdir -p docker/nginx
-    cp "docker/nginx/default.conf.template" "docker/nginx/default.conf"
-    
-    # Replace domain placeholders with actual domain
-    sed -i "s/dockabase\.com/$DOMAIN_NAME/g" "docker/nginx/default.conf"
-    sed -i "s/www\.dockabase\.com/www.$DOMAIN_NAME/g" "docker/nginx/default.conf"
-    
-    print_message "Nginx configuration updated with domain: $DOMAIN_NAME"
-  else
-    # If no template exists, check for the default.conf file
-    if [ -f "docker/nginx/default.conf" ]; then
-      print_message "Found existing Nginx configuration. Updating domain..."
-      
-      # Create a backup of the original file
-      cp "docker/nginx/default.conf" "docker/nginx/default.conf.bak"
-      
-      # Replace domain in the existing file
-      sed -i "s/server_name .*\$/server_name $DOMAIN_NAME www.$DOMAIN_NAME;/g" "docker/nginx/default.conf"
-      
-      if $ssl_exists; then
-        # Update SSL certificate paths if they exist
-        sed -i "s/ssl_certificate .*\/fullchain\.pem;/ssl_certificate \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/fullchain.pem;/g" "docker/nginx/default.conf"
-        sed -i "s/ssl_certificate_key .*\/privkey\.pem;/ssl_certificate_key \/etc\/letsencrypt\/live\/$DOMAIN_NAME\/privkey.pem;/g" "docker/nginx/default.conf"
-      fi
-      
-      print_message "Existing Nginx configuration updated with domain: $DOMAIN_NAME"
-    else
-      print_message "No Nginx configuration found. Creating one with domain: $DOMAIN_NAME"
-      mkdir -p docker/nginx
-      
-      # Create the Nginx configuration from scratch
-      if $ssl_exists; then
-        # Create full HTTPS configuration if SSL certificates exist
-        print_message "Creating HTTPS configuration with existing SSL certificates"
-        cat > docker/nginx/default.conf << EOF
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-    server_tokens off;
-
-    # Redirect all HTTP requests to HTTPS
-    location / {
-        return 301 https://\$host\$request_uri;
-    }
-
-    # Let's Encrypt verification
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-}
-
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-    server_tokens off;
-
-    # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
-    ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_tickets off;
-
-    # Diffie-Hellman parameter for DHE ciphersuites
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    # Intermediate configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
-
-    # HSTS (ngx_http_headers_module is required)
-    add_header Strict-Transport-Security "max-age=63072000" always;
-
-    # OCSP Stapling
-    ssl_stapling on;
-    ssl_stapling_verify on;
-    resolver 8.8.8.8 8.8.4.4 valid=300s;
-    resolver_timeout 5s;
-
-    # Root directory and index files
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_proxied any;
-    gzip_comp_level 6;
-    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
-
-    # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
-    }
-
-    # Main location block
-    location / {
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    # Error pages
-    error_page 404 /404.html;
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        root /usr/share/nginx/html;
-    }
-}
-EOF
-      else
-        # Create HTTP-only configuration if no SSL certificates exist
-        print_message "Creating HTTP-only configuration (SSL will be added later)"
-        cat > docker/nginx/default.conf << EOF
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-    server_tokens off;
-
-    # Let's Encrypt verification
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    # Serve static content
-    location / {
-        root /usr/share/nginx/html;
-        index index.html;
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_proxied any;
-    gzip_comp_level 6;
-    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
-
-    # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
-    }
-
-    # Error pages
-    error_page 404 /404.html;
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        root /usr/share/nginx/html;
-    }
-}
-EOF
-      fi
-    fi
-  fi
-}
-
-generate_ssl_certificate() {
-  # This function generates SSL certificates using Let's Encrypt
-  print_message "Generating SSL certificate for domain: $DOMAIN_NAME..."
-  
-  # Create necessary directories for certbot
-  mkdir -p docker/nginx/certbot/conf
-  mkdir -p docker/nginx/certbot/www
-  
-  # Create a temporary HTTP-only Nginx configuration
-  print_message "Creating temporary HTTP-only Nginx configuration..."
-  
-  # Backup the original configuration if it exists
-  if [ -f "docker/nginx/default.conf" ]; then
-    cp docker/nginx/default.conf docker/nginx/default.conf.ssl.bak
-  fi
-  
-  # Create HTTP-only configuration
-  cat > docker/nginx/default.conf << EOF
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-    server_tokens off;
-
-    # Let's Encrypt verification
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-
-    # Serve static content
-    location / {
-        root /usr/share/nginx/html;
-        index index.html;
-        try_files \$uri \$uri/ /index.html;
-    }
-}
-EOF
-  
-  # Start Nginx container for initial certificate generation
-  print_message "Starting Nginx container for SSL certificate generation..."
-  docker compose up -d nginx
-  
-  # Wait for Nginx to start
-  print_message "Waiting for Nginx to start..."
-  sleep 10
-  
-  # Check if Nginx is running
-  if ! docker compose ps nginx | grep -q "Up"; then
-    print_error "Nginx container failed to start. Check logs with: docker compose logs nginx"
+  # Check if Dockerfile exists
+  if [ ! -f "Dockerfile" ]; then
+    print_error "Dockerfile not found in the current directory."
+    print_error "Please make sure you are in the project directory."
     exit 1
   fi
   
-  print_message "Nginx is running. Proceeding with certificate generation..."
-  print_message "IMPORTANT: Make sure your domain $DOMAIN_NAME points to this server's IP address"
-  print_message "and that ports 80 and 443 are open in your firewall."
-  
-  # Generate SSL certificate with Let's Encrypt
-  print_message "Requesting certificate from Let's Encrypt..."
-  docker compose run --rm certbot certbot certonly --webroot --webroot-path=/var/www/certbot \
-    --email $EMAIL --agree-tos --no-eff-email \
-    -d $DOMAIN_NAME -d www.$DOMAIN_NAME
-  
-  # Check if certificate was generated successfully
-  if [ ! -d "docker/nginx/certbot/conf/live/$DOMAIN_NAME" ]; then
-    print_error "Failed to generate SSL certificate. Check certbot logs."
-    print_message "You can still use the site over HTTP, but HTTPS will not be available."
-    print_message "To retry certificate generation later, run: ./deploy-app.sh deploy $DOMAIN_NAME $EMAIL"
-    return 1
+  # Check if docker-compose.yml exists
+  if [ ! -f "docker-compose.yml" ]; then
+    print_message "docker-compose.yml not found. Creating one..."
+    # This will be created by the configure_caddy function
   fi
   
-  # Create full SSL configuration
-  print_message "Creating SSL configuration..."
-  cat > docker/nginx/default.conf << EOF
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-    server_tokens off;
-
-    # Redirect all HTTP requests to HTTPS
-    location / {
-        return 301 https://\$host\$request_uri;
-    }
-
-    # Let's Encrypt verification
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
+  # Create dist directory if it doesn't exist
+  if [ ! -d "dist" ]; then
+    print_message "Creating dist directory..."
+    mkdir -p dist
+  fi
+  
+  # Check if we need to build the application
+  if [ -f "package.json" ] && [ ! -f "dist/index.html" ]; then
+    print_message "Building the application..."
+    npm install
+    npm run build
+  fi
+  
+  print_message "File preparation completed"
 }
 
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-    server_tokens off;
+configure_caddy() {
+  # This function configures Caddy with the domain
+  print_message "Configuring Caddy for domain: $DOMAIN_NAME..."
 
-    # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
-    ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_tickets off;
+  # Create Caddyfile with domain configuration
+  print_message "Creating Caddyfile for domain: $DOMAIN_NAME"
+  cat > Caddyfile << EOF
+{
+    # Global settings
+    email $EMAIL
+    # Automatic HTTP to HTTPS redirection
+    auto_https on
+}
 
-    # Diffie-Hellman parameter for DHE ciphersuites
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-
-    # Intermediate configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
-
-    # HSTS (ngx_http_headers_module is required)
-    add_header Strict-Transport-Security "max-age=63072000" always;
-
-    # OCSP Stapling
-    ssl_stapling on;
-    ssl_stapling_verify on;
-    resolver 8.8.8.8 8.8.4.4 valid=300s;
-    resolver_timeout 5s;
-
-    # Root directory and index files
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_proxied any;
-    gzip_comp_level 6;
-    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
-
-    # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
+# Main domain configuration
+$DOMAIN_NAME {
+    # Static files directory
+    root * /srv/www
+    
+    # Serve files
+    file_server
+    
+    # Compression
+    encode gzip
+    
+    # Redirect www to non-www
+    redir www.$DOMAIN_NAME/* https://$DOMAIN_NAME{uri} permanent
+    
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
     }
-
-    # Main location block
-    location / {
-        try_files \$uri \$uri/ /index.html;
+    
+    # SPA (Single Page Application) handling
+    try_files {path} /index.html
+    
+    # Cache for static files
+    @static {
+        path *.css *.js *.ico *.gif *.jpg *.jpeg *.png *.svg *.woff *.woff2
     }
-
-    # Error pages
-    error_page 404 /404.html;
-    error_page 500 502 503 504 /50x.html;
-    location = /50x.html {
-        root /usr/share/nginx/html;
-    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
 }
 EOF
-  
-  # Restart Nginx to apply SSL configuration
-  print_message "Restarting Nginx to apply SSL configuration..."
-  docker compose restart nginx
-  
-  print_message "SSL certificate generated successfully"
-  print_message "Your site is now available at https://$DOMAIN_NAME"
+
+  print_message "Caddy configuration completed for domain: $DOMAIN_NAME"
 }
+
+# The prepare_files function has been updated to handle Caddy instead of Nginx
 
 # Parse command line arguments
 COMMAND=${1:-"help"}
