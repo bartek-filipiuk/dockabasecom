@@ -91,17 +91,57 @@ docker-compose -f docker-compose.yml up --build
 
 ## Deployment
 
-The website can be deployed to a VPS like DigitalOcean using the included Docker configuration:
+The website can be deployed to a VPS like DigitalOcean using the included Docker configuration. For security reasons, we've separated the deployment process into two scripts:
 
-1. Use the `install.sh` script for automated deployment:
-   ```bash
-   ./install.sh yourdomain.com your@email.com
-   ```
+### 1. System Setup (as root)
 
-2. This will set up:
-   - Nginx web server
-   - SSL certificates via Let's Encrypt
-   - Automatic certificate renewal
+First, run the `setup-system.sh` script as root to install system dependencies:
+
+```bash
+sudo ./setup-system.sh your-username
+```
+
+This script will:
+- Install Docker and Docker Compose
+- Add your user to the docker group
+- Create necessary directories with proper permissions
+- Configure firewall rules
+- Set up automatic SSL certificate renewal
+
+### 2. Creating a New User (Optional)
+
+If you need to create a new user on your VPS, you can use these commands:
+
+```bash
+# Create a new user
+sudo adduser username
+
+# Add user to sudo group
+sudo usermod -aG sudo username
+
+# Add user to docker group
+sudo usermod -aG docker username
+
+# Verify the groups
+groups username
+```
+
+After adding a user to the docker group, you need to log out and log back in for the changes to take effect.
+
+### 3. Application Deployment (as regular user)
+
+After setting up the system, log in as your regular user and run the `deploy-app.sh` script:
+
+```bash
+./deploy-app.sh yourdomain.com your@email.com
+```
+
+This script will:
+- Configure Nginx with your domain
+- Set up SSL certificates with Let's Encrypt
+- Deploy the Dockabase application
+
+Your website will be accessible at `https://yourdomain.com`
 
 For detailed deployment instructions, refer to the `deployment.md` file.
 

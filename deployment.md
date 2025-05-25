@@ -22,39 +22,78 @@ Before deploying, make sure your domain is pointing to your server's IP address:
 
 ## Automatic Installation
 
-We've provided an installation script that automates the entire deployment process:
+We've provided two installation scripts that automate the deployment process in a secure way:
+
+1. `setup-system.sh` - Runs as root to install system dependencies
+2. `deploy-app.sh` - Runs as a regular user to deploy the application
+
+This separation follows security best practices by minimizing the use of root privileges.
+
+### Step 1: System Setup (as root)
 
 1. Connect to your server via SSH:
    ```bash
    ssh root@your-server-ip
    ```
 
-2. Download the installation script:
+2. Download or upload the setup script:
    ```bash
-   curl -O https://raw.githubusercontent.com/yourusername/dockabase/main/install.sh
-   ```
-
-   Alternatively, you can upload the script from your local machine:
-   ```bash
-   scp install.sh root@your-server-ip:/root/
+   # Option 1: Download directly to server
+   curl -O https://raw.githubusercontent.com/yourusername/dockabase/main/setup-system.sh
+   
+   # Option 2: Upload from your local machine
+   # scp setup-system.sh root@your-server-ip:/root/
    ```
 
 3. Make the script executable:
    ```bash
-   chmod +x install.sh
+   chmod +x setup-system.sh
    ```
 
-4. Run the installation script with your domain name and email:
+4. Run the setup script with your regular username:
    ```bash
-   ./install.sh yourdomain.com your@email.com
+   ./setup-system.sh your-username
    ```
 
-   The script will:
+   This script will:
    - Install Docker and Docker Compose
+   - Add your user to the docker group
+   - Create the project directory with proper permissions
+   - Configure firewall rules for HTTP and HTTPS
+   - Set up automatic SSL certificate renewal
+
+5. **Important**: After running this script, you need to log out and log back in for the docker group membership to take effect.
+
+### Step 2: Application Deployment (as regular user)
+
+1. Connect to your server via SSH as your regular user:
+   ```bash
+   ssh your-username@your-server-ip
+   ```
+
+2. Download or upload the deployment script:
+   ```bash
+   # Option 1: Download directly to server
+   curl -O https://raw.githubusercontent.com/yourusername/dockabase/main/deploy-app.sh
+   
+   # Option 2: Upload from your local machine
+   # scp deploy-app.sh your-username@your-server-ip:~/
+   ```
+
+3. Make the script executable:
+   ```bash
+   chmod +x deploy-app.sh
+   ```
+
+4. Run the deployment script with your domain name and email:
+   ```bash
+   ./deploy-app.sh yourdomain.com your@email.com
+   ```
+
+   This script will:
    - Configure Nginx with your domain
    - Set up SSL certificates with Let's Encrypt
    - Deploy the Dockabase application
-   - Configure automatic SSL certificate renewal
 
 5. After completion, your site should be accessible at `https://yourdomain.com`
 
