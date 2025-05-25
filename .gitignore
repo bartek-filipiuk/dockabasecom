@@ -38,6 +38,3 @@ pnpm-debug.log*
 
 # Astro
 .astro/
-
-# Other files
-docs
