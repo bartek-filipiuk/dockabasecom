@@ -1,8 +1,8 @@
 {
     # Global settings
-    email your-email@example.com
+    email bartek@dockabase.com
     # Automatic HTTP to HTTPS redirection
-    auto_https on
+    auto_https
 }
 
 # Main domain configuration
