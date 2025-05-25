@@ -19,7 +19,7 @@ dockabase.com {
     file_server
     
     # Compression
-    encode gzip
+    encode zstd gzip
     
     # Security headers
     header {
@@ -29,8 +29,11 @@ dockabase.com {
         Referrer-Policy "strict-origin-when-cross-origin"
     }
     
-    # SPA (Single Page Application) handling
-    try_files {path} /index.html
+    # Handle 404 errors with a custom error page
+    handle_errors {
+        rewrite * /404.html
+        file_server
+    }
     
     # Cache for static files
     @static {
