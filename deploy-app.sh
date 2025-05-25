@@ -138,10 +138,7 @@ update_caddyfile() {
   
   # Update www redirect
   sed -i "s/redir www\.[a-zA-Z0-9][a-zA-Z0-9.-]*\//redir www.$domain\//" Caddyfile
-  
-  # Ensure auto_https has correct syntax
-  sed -i "s/auto_https on/auto_https/" Caddyfile
-  
+
   print_message "Caddyfile has been updated"
 }
 

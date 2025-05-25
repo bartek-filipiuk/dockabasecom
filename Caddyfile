@@ -1,8 +1,8 @@
 {
     # Global settings
     email bartek@dockabase.com
-    # Automatic HTTP to HTTPS redirection
-    auto_https
+    # Automatic HTTP to HTTPS redirection is enabled by default
+    # No need to specify auto_https as it's the default behavior
 }
 
 # Main domain configuration
