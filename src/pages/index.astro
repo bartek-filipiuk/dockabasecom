@@ -69,36 +69,58 @@ import NeuralBackground from '../components/NeuralBackground.astro';
       
       <div class="grid md:grid-cols-2 gap-8">
         <div>
-          <h3 class="text-xl font-bold mb-4">Clone & Start</h3>
-          <CommandCopy command={`git clone https://github.com/bartek-filipiuk/qdrant_caddy.git
-cd dockabase
-docker-compose up -d`} />
+          <h3 class="text-xl font-bold mb-4">Setup</h3>
+          <CommandCopy command={`# Clone repository
+git clone https://github.com/bartek-filipiuk/qdrant_caddy.git
+cd qdrant_caddy
+
+# Configure environment
+cp .env.example .env
+# Edit .env file with your settings`} language="bash" />
         </div>
         
         <div>
-          <h3 class="text-xl font-bold mb-4">Check Status</h3>
-          <CommandCopy command={`docker-compose ps
-curl http://localhost:6333/health`} />
+          <h3 class="text-xl font-bold mb-4">Basic Operations</h3>
+          <CommandCopy command={`# Start Qdrant
+./start.sh                # Starts containers based on ENV setting in .env
+
+# Stop Qdrant
+./stop.sh                 # Stops all containers
+
+# Restart Qdrant
+./restart.sh              # Restarts containers and applies config changes`} language="bash" />
         </div>
         
         <div>
-          <h3 class="text-xl font-bold mb-4">Create Collection</h3>
-          <CommandCopy command={`curl -X PUT 'http://localhost:6333/collections/my_collection' \\
--H 'Content-Type: application/json' \\
--d '{
-  "vectors": {
-    "size": 384,
-    "distance": "Cosine"
-  }
-}'`} language="bash" />
+          <h3 class="text-xl font-bold mb-4">Domain Setup (Production)</h3>
+          <CommandCopy command={`# Configure domain for production
+./scripts/setup-domain.sh # Sets up domain with HTTPS using Let's Encrypt`} language="bash" />
         </div>
         
         <div>
-          <h3 class="text-xl font-bold mb-4">Stop & Remove</h3>
-          <CommandCopy command={`docker-compose down
-# To remove volumes as well:
-docker-compose down -v`} />
+          <h3 class="text-xl font-bold mb-4">Backup & Restore</h3>
+          <CommandCopy command={`# Backup a specific collection
+python scripts/backup_snapshots.py --collection my_collection
+
+# Backup all collections
+python scripts/backup_snapshots.py --all
+
+# Restore a collection
+python scripts/restore_snapshots.py --snapshot ./snapshots/my_collection.snapshot --collection my_collection
+
+# Create new collection from backup
+python scripts/restore_snapshots.py --snapshot ./snapshots/my_collection.snapshot --new-collection new_collection`} language="bash" />
         </div>
+      </div>
+      
+      <div class="mt-8 bg-dark-700 p-6 rounded-lg max-w-3xl mx-auto">
+        <h3 class="text-xl font-bold mb-4">Access Information</h3>
+        <ul class="list-disc pl-6 space-y-2">
+          <li><strong>Local Environment</strong>: http://localhost:8081/dashboard</li>
+          <li><strong>Production Environment</strong>: https://your-domain.com/dashboard</li>
+          <li><strong>Default Credentials</strong>: Set in .env file (ADMIN_USER/ADMIN_PASSWORD)</li>
+          <li><strong>API Key</strong>: Set in .env file (QDRANT_API_KEY)</li>
+        </ul>
       </div>
       
       <div class="text-center mt-12">
