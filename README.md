@@ -25,7 +25,7 @@ This is the website codebase only, not the actual Qdrant implementation. The Qdr
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) v3.4.1
 - **Content**: Markdown (MDX) with @astrojs/mdx v4.3.0
 - **Runtime**: [Node.js](https://nodejs.org/) v22
-- **Deployment**: Docker, Docker Compose, Nginx
+- **Deployment**: Docker, Docker Compose, Caddy
 
 ## Development
 
@@ -137,8 +137,8 @@ After setting up the system, log in as your regular user and run the `deploy-app
 ```
 
 This script will:
-- Configure Nginx with your domain
-- Set up SSL certificates with Let's Encrypt
+- Configure Caddy with your domain
+- Automatically handle SSL certificates (Caddy manages this for you)
 - Deploy the Dockabase application
 
 Your website will be accessible at `https://yourdomain.com`
