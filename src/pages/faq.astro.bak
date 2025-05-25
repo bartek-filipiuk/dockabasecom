@@ -1,0 +1,427 @@
+---
+import DocLayout from '../layouts/DocLayout.astro';
+import Alert from '../components/Alert.astro';
+---
+
+<DocLayout title="Frequently Asked Questions">
+  <div class="space-y-12">
+    <div>
+      <h1 class="text-3xl font-bold mb-6">Frequently Asked Questions (FAQ)</h1>
+      <p class="text-lg text-gray-300 mb-8">
+        This page provides answers to common questions about managing and using the Qdrant deployment.
+      </p>
+    </div>
+
+    <!-- General Questions -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 border-b border-dark-700 pb-2">General Questions</h2>
+      
+      <div class="space-y-8 mt-6">
+        <div>
+          <h3 class="text-xl font-bold mb-2">What is Dockabase?</h3>
+          <p>
+            Dockabase is an open-source project that provides a pre-configured Docker setup for quickly deploying and running the Qdrant vector database. It includes a ready-to-use docker-compose.yml configuration, simple tutorials, and a set of useful commands.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-bold mb-2">What is Qdrant?</h3>
+          <p>
+            Qdrant is a vector similarity search engine. It provides a production-ready service with a convenient API to store, search, and manage points (vectors with additional payload). Qdrant is tailored to extended filtering support. It makes it useful for all sorts of neural network or semantic-based matching, faceted search, and other applications.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-bold mb-2">Do I need Docker experience to use Dockabase?</h3>
+          <p>
+            Basic familiarity with Docker and Docker Compose is helpful, but not required. Dockabase provides simple commands and instructions that even Docker beginners can follow. The setup is designed to be straightforward and user-friendly.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-bold mb-2">Can I use Dockabase in production?</h3>
+          <p>
+            Yes! Dockabase is designed to be used in both development and production environments. We provide deployment instructions for setting up on a VPS with proper SSL configuration. However, you may want to adjust some settings based on your specific production needs.
+          </p>
+        </div>
+        
+        <div>
+          <h3 class="text-xl font-bold mb-2">Is Dockabase free to use?</h3>
+          <p>
+            Yes, Dockabase is completely free and open-source under the MIT license. You can use it for personal, educational, or commercial projects without any restrictions.
+          </p>
+        </div>
+        
+        <div>
+          <h3 class="text-xl font-bold mb-2">How can I contribute to Dockabase?</h3>
+          <p class="mb-2">
+            Contributions are welcome! You can contribute by:
+          </p>
+          <ul class="list-disc pl-6 space-y-2">
+            <li>Reporting bugs or suggesting features through GitHub issues</li>
+            <li>Submitting pull requests with improvements or fixes</li>
+            <li>Improving documentation or adding examples</li>
+            <li>Sharing Dockabase with others who might find it useful</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Authentication and Security -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 border-b border-dark-700 pb-2">Authentication and Security</h2>
+      
+      <div class="space-y-8 mt-6">
+        <div>
+          <h3 class="text-xl font-bold mb-2">How do I change the admin password?</h3>
+          <p class="mb-4">
+            To change the admin password, follow these steps:
+          </p>
+          
+          <ol class="list-decimal list-inside space-y-4 ml-2">
+            <li>
+              <p>Generate a new bcrypt hash for your desired password using Caddy's built-in tool:</p>
+              <div class="code-block relative group">
+                <div class="text-xs text-gray-400 absolute top-2 left-4">Replace YOUR_NEW_PASSWORD with your desired password</div>
+                <pre class="language-bash overflow-x-auto pt-6"><code>docker run --rm caddy:2-alpine caddy hash-password --plaintext YOUR_NEW_PASSWORD</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <Alert type="info" title="Important">
+                Make sure to use the <code class="bg-dark-700 px-1 py-0.5 rounded">caddy:2-alpine</code> image to ensure compatibility with your deployment.
+              </Alert>
+            </li>
+            
+            <li>
+              <p><strong>Method 1 (Using environment variables - recommended for most cases):</strong></p>
+              <p class="mb-2">Update the <code class="bg-dark-700 px-1 py-0.5 rounded">.env</code> file with your new password and the generated hash:</p>
+              
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>ADMIN_PASSWORD=YOUR_NEW_PASSWORD
+ADMIN_PASSWORD_HASH=YOUR_GENERATED_HASH</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <p class="mb-2">For example:</p>
+              
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>ADMIN_PASSWORD=new_secure_password
+ADMIN_PASSWORD_HASH=$2a$14$tC.4t2YAnLvBsAXrgf8bQOveZOqhCxo44B4tAcQVx2FQodpDxikfS</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <Alert type="info">
+                Caddy requires bcrypt hashes in the <code class="bg-dark-700 px-1 py-0.5 rounded">$2a$</code> format. If your hash starts with <code class="bg-dark-700 px-1 py-0.5 rounded">$2y$</code> (PHP format), it will not work correctly.
+              </Alert>
+            </li>
+            
+            <li>
+              <p><strong>Method 2 (Direct Caddyfile modification - use if environment variables don't work):</strong></p>
+              <p class="mb-2">If you experience issues with environment variables not being properly interpolated, you can directly modify the Caddyfile:</p>
+              
+              <ol class="list-[a-z] list-inside space-y-2 ml-4">
+                <li>Open the <code class="bg-dark-700 px-1 py-0.5 rounded">config/Caddyfile.prod</code> file</li>
+                <li>Locate the basic_auth section and replace it with your hardcoded credentials:</li>
+              </ol>
+              
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code># Basic Auth for all routes
+basic_auth {
+    # Username and hashed password
+    admin YOUR_GENERATED_HASH
+}</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <p class="mb-2">For example:</p>
+              
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code># Basic Auth for all routes
+basic_auth {
+    # Username and hashed password for "new_secure_password"
+    admin \$2a\$14\$tC.4t2YAnLvBsAXrgf8bQOveZOqhCxo44B4tAcQVx2FQodpDxikfS
+}</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+            
+            <li>
+              <p>Restart the service using the restart script:</p>
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>./restart.sh</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+            
+            <li>
+              <p>Verify that you can authenticate with the new password.</p>
+            </li>
+          </ol>
+          
+          <Alert type="warning" title="Important">
+            Always keep your <code class="bg-dark-700 px-1 py-0.5 rounded">.env</code> file secure as it contains sensitive information.
+          </Alert>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-bold mb-2">What should I do if I get a 401 Unauthorized error?</h3>
+          <p class="mb-4">
+            If you're getting a 401 Unauthorized error after changing your password, it's likely that the password hash in the <code class="bg-dark-700 px-1 py-0.5 rounded">.env</code> file doesn't match your password. Follow the steps above to generate a new hash and update both the password and hash in the <code class="bg-dark-700 px-1 py-0.5 rounded">.env</code> file.
+          </p>
+          <p>
+            For more detailed troubleshooting of authentication issues, refer to the <a href="/troubleshooting" class="text-primary hover:underline">Troubleshooting Guide</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Usage -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 border-b border-dark-700 pb-2">API Usage</h2>
+      
+      <div class="space-y-8 mt-6">
+        <div>
+          <h3 class="text-xl font-bold mb-2">How do I authenticate API requests?</h3>
+          <p class="mb-4">
+            When making API requests to Qdrant through the Caddy proxy, you need to include both:
+          </p>
+          
+          <ol class="list-decimal list-inside mb-4">
+            <li>Basic Authentication with your admin username and password</li>
+            <li>The Qdrant API key in the request headers</li>
+          </ol>
+          
+          <p class="mb-2">Example using curl:</p>
+          <div class="code-block relative group">
+            <pre class="language-bash overflow-x-auto"><code>curl -X GET "https://your-domain.com/collections" \
+  -u "admin:your_password" \
+  -H "Content-Type: application/json" \
+  -H "api-key: your_api_key"</code></pre>
+            <button class="copy-button">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Maintenance -->
+    <div>
+      <h2 class="text-2xl font-bold mb-4 border-b border-dark-700 pb-2">Maintenance</h2>
+      
+      <div class="space-y-8 mt-6">
+        <div>
+          <h3 class="text-xl font-bold mb-2">How do I backup my Qdrant data?</h3>
+          <p class="mb-4">
+            Qdrant data is stored in a Docker volume. To backup this data:
+          </p>
+          
+          <ol class="list-decimal list-inside space-y-4">
+            <li>
+              <p>Stop the service:</p>
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>docker compose -f docker-compose.prod.yml down</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+            
+            <li>
+              <p>Create a backup of the Qdrant volume:</p>
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>docker run --rm -v qdrant_storage:/data -v \$(pwd)/backups:/backups alpine tar -czf /backups/qdrant-backup-\$(date +%Y%m%d).tar.gz /data</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+            
+            <li>
+              <p>Restart the service:</p>
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>docker compose -f docker-compose.prod.yml up -d</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-bold mb-2">How do I restore from a backup?</h3>
+          <p class="mb-4">
+            To restore from a backup:
+          </p>
+          
+          <ol class="list-decimal list-inside space-y-4">
+            <li>
+              <p>Stop the service:</p>
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>docker compose -f docker-compose.prod.yml down</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+            
+            <li>
+              <p>Restore the backup to the Qdrant volume:</p>
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>docker run --rm -v qdrant_storage:/data -v \$(pwd)/backups:/backups alpine sh -c "rm -rf /data/* && tar -xzf /backups/your-backup-file.tar.gz -C /"</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+            
+            <li>
+              <p>Restart the service:</p>
+              <div class="code-block relative group">
+                <pre class="language-bash overflow-x-auto"><code>docker compose -f docker-compose.prod.yml up -d</code></pre>
+                <button class="copy-button">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                    <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div>
+          <h3 class="text-xl font-bold mb-2">How do I update Qdrant to a newer version?</h3>
+          <p class="mb-4">
+            To update Qdrant to a newer version, you can modify the version tag in your docker-compose.yml file and then run:
+          </p>
+          <div class="code-block relative group">
+            <pre class="language-bash overflow-x-auto"><code>docker-compose pull
+docker-compose up -d</code></pre>
+            <button class="copy-button">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+              </svg>
+            </button>
+          </div>
+          <p class="mt-4">
+            Make sure to check Qdrant's release notes for any breaking changes before updating.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocLayout>
+
+<script>
+  // Copy button functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    setupCopyButtons();
+  });
+  
+  function setupCopyButtons() {
+    const copyButtons = document.querySelectorAll('.copy-button');
+    
+    copyButtons.forEach(button => {
+      button.addEventListener('click', async () => {
+        const codeBlock = button.closest('.code-block');
+        const codeElement = codeBlock.querySelector('code');
+        const textToCopy = codeElement.textContent;
+        
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          
+          // Add copied class to button
+          button.classList.add('copied');
+          
+          // Show check icon
+          const copyIcon = button.querySelector('.copy-icon');
+          if (copyIcon) {
+            copyIcon.innerHTML = `
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M5 12l5 5l10 -10"></path>
+            `;
+          }
+          
+          setTimeout(() => {
+            // Reset button
+            button.classList.remove('copied');
+            if (copyIcon) {
+              copyIcon.innerHTML = `
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+                <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+              `;
+            }
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy: ', err);
+        }
+      });
+    });
+  }
+</script>

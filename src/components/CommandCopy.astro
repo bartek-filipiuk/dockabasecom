@@ -1,0 +1,102 @@
+---
+interface Props {
+  command: string;
+  language?: string;
+  title?: string;
+}
+
+const { command, language = "bash", title } = Astro.props;
+
+// Function to format command for display
+function formatCommand(cmd: string) {
+  // Replace common patterns with syntax highlighting spans
+  return cmd
+    .replace(/\$\s*([^\s;]+)/g, '$<span class="keyword">$</span> <span class="function">$1</span>')
+    .replace(/("[^"]*")/g, '<span class="string">$1</span>')
+    .replace(/('[^']*')/g, '<span class="string">$1</span>')
+    .replace(/(\d+)/g, '<span class="number">$1</span>')
+    .replace(/(\-\-[a-zA-Z0-9\-]+)/g, '<span class="operator">$1</span>');
+}
+
+const formattedCommand = formatCommand(command);
+---
+
+<div class="relative code-block group w-full max-w-full">
+  {title && <div class="text-xs text-gray-400 absolute top-2 left-4">{title}</div>}
+  <pre class="language-{language} overflow-x-auto pt-6 w-full max-w-full"><code set:html={formattedCommand} class="whitespace-pre-wrap break-words" /></pre>
+  <button
+    class="copy-button"
+    data-command={command}
+    aria-label="Copy to clipboard"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon copy-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+      <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+      <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+    </svg>
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon check-icon hidden" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+      <path d="M5 12l5 5l10 -10"></path>
+    </svg>
+  </button>
+</div>
+
+<script>
+  // Add event listeners to all copy buttons
+  document.addEventListener('astro:page-load', () => {
+    const copyButtons = document.querySelectorAll('.copy-button');
+    
+    copyButtons.forEach(button => {
+      button.addEventListener('click', async () => {
+        const command = button.getAttribute('data-command');
+        const copyIcon = button.querySelector('.copy-icon');
+        const checkIcon = button.querySelector('.check-icon');
+        
+        if (command && copyIcon && checkIcon) {
+          try {
+            await navigator.clipboard.writeText(command);
+            
+            // Add copied class to button
+            button.classList.add('copied');
+            
+            // Show check icon
+            copyIcon.classList.add('hidden');
+            checkIcon.classList.remove('hidden');
+            
+            setTimeout(() => {
+              // Reset button
+              button.classList.remove('copied');
+              copyIcon.classList.remove('hidden');
+              checkIcon.classList.add('hidden');
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy: ', err);
+          }
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .copy-icon, .check-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  .code-block {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    width: 100%;
+  }
+</style>

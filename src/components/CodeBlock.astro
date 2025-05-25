@@ -1,0 +1,93 @@
+---
+interface Props {
+  code: string;
+  language?: string;
+  filename?: string;
+}
+
+const { code, language = "bash", filename } = Astro.props;
+---
+
+<div class="code-block-wrapper group relative my-6 w-full max-w-full">
+  {filename && (
+    <div class="code-filename px-4 py-2 text-xs font-mono bg-dark-700 text-gray-300 rounded-t-md border-b border-dark-600 w-full">
+      {filename}
+    </div>
+  )}
+  <div class="relative w-full">
+    <pre
+      class={`language-${language} p-4 rounded-md ${filename ? 'rounded-t-none' : ''} bg-dark-800 overflow-x-auto w-full max-w-full`}
+    ><code class="text-sm whitespace-pre-wrap break-words">{code}</code></pre>
+    
+    <button
+      class="copy-button absolute top-3 right-3 p-2 rounded-md bg-dark-700 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-dark-600"
+      data-code={code}
+      aria-label="Copy to clipboard"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="copy-icon w-5 h-5" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+        <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" class="check-icon w-5 h-5 hidden" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M5 12l5 5l10 -10"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  // Add event listeners to all copy buttons
+  document.addEventListener('astro:page-load', () => {
+    const copyButtons = document.querySelectorAll('.code-block-wrapper .copy-button');
+    
+    copyButtons.forEach(button => {
+      button.addEventListener('click', async () => {
+        const code = button.getAttribute('data-code');
+        const copyIcon = button.querySelector('.copy-icon');
+        const checkIcon = button.querySelector('.check-icon');
+        
+        if (code && copyIcon && checkIcon) {
+          try {
+            await navigator.clipboard.writeText(code);
+            
+            // Show check icon
+            copyIcon.classList.add('hidden');
+            checkIcon.classList.remove('hidden');
+            
+            // Add copied class to button
+            button.classList.add('bg-green-700');
+            button.classList.remove('bg-dark-700');
+            button.classList.remove('hover:bg-dark-600');
+            
+            setTimeout(() => {
+              // Reset button
+              copyIcon.classList.remove('hidden');
+              checkIcon.classList.add('hidden');
+              button.classList.remove('bg-green-700');
+              button.classList.add('bg-dark-700');
+              button.classList.add('hover:bg-dark-600');
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy: ', err);
+          }
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .code-block-wrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    width: 100%;
+    max-width: 100%;
+  }
+</style>

@@ -1,0 +1,8 @@
+---
+import DocLayout from '../layouts/DocLayout.astro';
+---
+
+<DocLayout title="FAQ">
+  <h1>Frequently Asked Questions</h1>
+  <p>This is a minimal version of the FAQ page.</p>
+</DocLayout>

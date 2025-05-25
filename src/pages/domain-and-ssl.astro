@@ -1,0 +1,114 @@
+---
+import DocLayout from '../layouts/DocLayout.astro';
+import { Content as DomainSSLContent } from '../../docs/materialy/Domain and SSL.md';
+---
+
+<DocLayout title="Domain and SSL Configuration">
+  <DomainSSLContent />
+</DocLayout>
+
+<script>
+  // Add copy functionality to code blocks
+  document.addEventListener('astro:page-load', () => {
+    // Find all pre > code elements
+    const codeBlocks = document.querySelectorAll('pre > code');
+    
+    codeBlocks.forEach(codeBlock => {
+      const pre = codeBlock.parentElement;
+      if (!pre.classList.contains('processed')) {
+        // Get the code content
+        const code = codeBlock.textContent || '';
+        
+        // Get language from class (e.g., language-bash)
+        let language = 'text';
+        const languageMatch = [...codeBlock.classList].find(cls => cls.startsWith('language-'));
+        if (languageMatch) {
+          language = languageMatch.replace('language-', '');
+        }
+        
+        // Create wrapper div
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-block-wrapper group relative my-6';
+        
+        // Create relative div
+        const relativeDiv = document.createElement('div');
+        relativeDiv.className = 'relative';
+        
+        // Create copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button absolute top-3 right-3 p-2 rounded-md bg-dark-700 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-dark-600';
+        copyButton.setAttribute('data-code', code);
+        copyButton.setAttribute('aria-label', 'Copy to clipboard');
+        
+        // Create copy icon
+        const copyIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        copyIcon.setAttribute('class', 'copy-icon w-5 h-5');
+        copyIcon.setAttribute('viewBox', '0 0 24 24');
+        copyIcon.setAttribute('stroke-width', '2');
+        copyIcon.setAttribute('stroke', 'currentColor');
+        copyIcon.setAttribute('fill', 'none');
+        copyIcon.innerHTML = `
+          <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+          <path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"></path>
+          <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+        `;
+        
+        // Create check icon
+        const checkIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        checkIcon.setAttribute('class', 'check-icon w-5 h-5 hidden');
+        checkIcon.setAttribute('viewBox', '0 0 24 24');
+        checkIcon.setAttribute('stroke-width', '2');
+        checkIcon.setAttribute('stroke', 'currentColor');
+        checkIcon.setAttribute('fill', 'none');
+        checkIcon.innerHTML = `
+          <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+          <path d="M5 12l5 5l10 -10"></path>
+        `;
+        
+        // Add icons to button
+        copyButton.appendChild(copyIcon);
+        copyButton.appendChild(checkIcon);
+        
+        // Add event listener to button
+        copyButton.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(code);
+            
+            // Show check icon
+            copyIcon.classList.add('hidden');
+            checkIcon.classList.remove('hidden');
+            
+            // Add copied class to button
+            copyButton.classList.add('bg-green-700');
+            copyButton.classList.remove('bg-dark-700');
+            copyButton.classList.remove('hover:bg-dark-600');
+            
+            setTimeout(() => {
+              // Reset button
+              copyIcon.classList.remove('hidden');
+              checkIcon.classList.add('hidden');
+              copyButton.classList.remove('bg-green-700');
+              copyButton.classList.add('bg-dark-700');
+              copyButton.classList.add('hover:bg-dark-600');
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy: ', err);
+          }
+        });
+        
+        // Add button to relative div
+        relativeDiv.appendChild(pre.cloneNode(true));
+        relativeDiv.appendChild(copyButton);
+        
+        // Add relative div to wrapper
+        wrapper.appendChild(relativeDiv);
+        
+        // Replace pre with wrapper
+        pre.parentNode?.replaceChild(wrapper, pre);
+        
+        // Mark as processed
+        pre.classList.add('processed');
+      }
+    });
+  });
+</script>

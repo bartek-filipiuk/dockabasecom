@@ -1,0 +1,64 @@
+---
+import DocLayout from '../layouts/DocLayout.astro';
+import { Content as FaqContent } from '../../docs/materialy/FAQ.md';
+---
+
+<DocLayout title="Frequently Asked Questions">
+  <div class="faq-content">
+    <FaqContent />
+  </div>
+
+  <style>
+    .faq-content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    .faq-content :global(h1) {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+    }
+    .faq-content :global(h2) {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .faq-content :global(h3) {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .faq-content :global(p) {
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+    .faq-content :global(ul), .faq-content :global(ol) {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .faq-content :global(li) {
+      margin-bottom: 0.5rem;
+    }
+    .faq-content :global(pre) {
+      background-color: var(--color-bg-code);
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+    .faq-content :global(code) {
+      font-family: monospace;
+    }
+    .faq-content :global(blockquote) {
+      border-left: 4px solid var(--color-accent);
+      padding-left: 1rem;
+      margin: 1rem 0;
+      font-style: italic;
+    }
+  </style>
+</DocLayout>

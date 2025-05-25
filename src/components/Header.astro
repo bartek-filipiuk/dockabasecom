@@ -1,0 +1,126 @@
+---
+---
+
+<header class="border-b border-dark-800 py-4">
+  <div class="container mx-auto flex justify-between items-center">
+    <a href="/" class="text-white text-xl font-bold flex items-center">
+      <span class="text-primary mr-2">Docka</span>base
+    </a>
+    <nav class="hidden md:flex space-x-6">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/faq" class="nav-link">FAQ</a>
+      <a href="/qdrant-api-tutorial" class="nav-link">Qdrant API Tutorial</a>
+      
+      <!-- Documentation Dropdown -->
+      <div class="relative group">
+        <button class="nav-link flex items-center">
+          Documentation
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-dark-800 ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out z-50">
+          <div class="py-1">
+            <a href="/troubleshooting" class="block px-4 py-2 text-sm hover:bg-dark-700 transition-colors">Troubleshooting</a>
+            <a href="/deployment" class="block px-4 py-2 text-sm hover:bg-dark-700 transition-colors">Deployment</a>
+            <a href="/domain-and-ssl" class="block px-4 py-2 text-sm hover:bg-dark-700 transition-colors">Domain & SSL</a>
+            <a href="/backups" class="block px-4 py-2 text-sm hover:bg-dark-700 transition-colors">Backups</a>
+          </div>
+        </div>
+      </div>
+      
+      <a href="https://github.com/bartek-filipiuk/qdrant_caddy" class="nav-link" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+    <button id="menu-toggle" class="md:hidden text-white">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+      </svg>
+    </button>
+  </div>
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden md:hidden absolute left-0 right-0 top-[4.5rem] z-50 bg-dark-800 border-b border-dark-700 shadow-lg">
+    <div class="container mx-auto py-4">
+      <div class="flex flex-col space-y-4 px-4">
+        <a href="/" class="nav-link block py-2 px-3 hover:bg-dark-700 rounded-md transition-colors">Home</a>
+        <a href="/faq" class="nav-link block py-2 px-3 hover:bg-dark-700 rounded-md transition-colors">FAQ</a>
+        <a href="/qdrant-api-tutorial" class="nav-link block py-2 px-3 hover:bg-dark-700 rounded-md transition-colors">Qdrant API Tutorial</a>
+        
+        <!-- Documentation Section -->
+        <div class="py-2 px-3">
+          <div class="flex items-center justify-between cursor-pointer" id="docs-toggle">
+            <span class="nav-link">Documentation</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <div class="pl-4 mt-2 hidden" id="docs-submenu">
+            <a href="/troubleshooting" class="nav-link block py-2 hover:bg-dark-700 rounded-md transition-colors">Troubleshooting</a>
+            <a href="/deployment" class="nav-link block py-2 hover:bg-dark-700 rounded-md transition-colors">Deployment</a>
+            <a href="/domain-and-ssl" class="nav-link block py-2 hover:bg-dark-700 rounded-md transition-colors">Domain & SSL</a>
+            <a href="/backups" class="nav-link block py-2 hover:bg-dark-700 rounded-md transition-colors">Backups</a>
+          </div>
+        </div>
+        
+        <div class="border-t border-dark-700 my-2 pt-2">
+          <a href="https://github.com/bartek-filipiuk/qdrant_caddy" class="nav-link flex items-center py-2 px-3 hover:bg-dark-700 rounded-md transition-colors" target="_blank" rel="noopener noreferrer">
+            <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+            </svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Mobile menu toggle
+  document.addEventListener('DOMContentLoaded', function() {
+    setupMobileMenu();
+  });
+
+  // Astro's View Transitions support (if enabled)
+  document.addEventListener('astro:page-load', function() {
+    setupMobileMenu();
+  });
+
+  function setupMobileMenu() {
+    const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const docsToggle = document.getElementById('docs-toggle');
+    const docsSubmenu = document.getElementById('docs-submenu');
+    
+    if (menuToggle && mobileMenu) {
+      // Remove any existing event listeners to prevent duplicates
+      menuToggle.removeEventListener('click', toggleMenu);
+      
+      // Add new event listener
+      menuToggle.addEventListener('click', toggleMenu);
+      
+      function toggleMenu() {
+        mobileMenu.classList.toggle('hidden');
+      }
+    }
+    
+    // Documentation submenu toggle for mobile
+    if (docsToggle && docsSubmenu) {
+      // Remove any existing event listeners to prevent duplicates
+      docsToggle.removeEventListener('click', toggleDocsSubmenu);
+      
+      // Add new event listener
+      docsToggle.addEventListener('click', toggleDocsSubmenu);
+      
+      function toggleDocsSubmenu() {
+        docsSubmenu.classList.toggle('hidden');
+        
+        // Toggle the arrow icon
+        const arrow = docsToggle.querySelector('svg');
+        if (arrow) {
+          arrow.classList.toggle('transform');
+          arrow.classList.toggle('rotate-180');
+        }
+      }
+    }
+  }
+</script>

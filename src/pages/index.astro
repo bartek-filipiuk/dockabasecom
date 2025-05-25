@@ -1,0 +1,109 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import CommandCopy from '../components/CommandCopy.astro';
+import NeuralBackground from '../components/NeuralBackground.astro';
+---
+
+<MainLayout title="Dockabase - Quick setup for Qdrant vector database with Docker">
+  <!-- Hero Section -->
+  <section class="py-16 md:py-24 min-h-[500px] bg-gradient-to-b from-dark-900 to-dark relative overflow-hidden">
+    <NeuralBackground />
+    <div class="container mx-auto text-center relative z-10">
+      <h1 class="text-4xl md:text-6xl font-bold mb-6">
+        <span class="text-primary">Docka</span>base
+      </h1>
+      <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+        Quick and easy setup for Qdrant vector database in Docker containers.
+        Get up and running in minutes with our pre-configured environment.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="/tutorial-qdrant-api" class="btn">Get Started</a>
+        <a href="https://github.com/bartek-filipiuk/qdrant_caddy" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-16 bg-dark-800">
+    <div class="container mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">Why Dockabase?</h2>
+      
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-dark-700 p-6 rounded-lg">
+          <div class="text-primary text-4xl mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Quick Setup</h3>
+          <p class="text-gray-300">Get your Qdrant vector database running in minutes with our pre-configured Docker setup.</p>
+        </div>
+        
+        <div class="bg-dark-700 p-6 rounded-lg">
+          <div class="text-primary text-4xl mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Production Ready</h3>
+          <p class="text-gray-300">Easily deploy to your VPS with our step-by-step instructions and configuration files.</p>
+        </div>
+        
+        <div class="bg-dark-700 p-6 rounded-lg">
+          <div class="text-primary text-4xl mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-2">Simplified Experience</h3>
+          <p class="text-gray-300">Comprehensive documentation and troubleshooting guides to help you along the way.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Commands Section -->
+  <section class="py-16">
+    <div class="container mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">Essential Commands</h2>
+      
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <h3 class="text-xl font-bold mb-4">Clone & Start</h3>
+          <CommandCopy command={`git clone https://github.com/bartek-filipiuk/qdrant_caddy.git
+cd dockabase
+docker-compose up -d`} />
+        </div>
+        
+        <div>
+          <h3 class="text-xl font-bold mb-4">Check Status</h3>
+          <CommandCopy command={`docker-compose ps
+curl http://localhost:6333/health`} />
+        </div>
+        
+        <div>
+          <h3 class="text-xl font-bold mb-4">Create Collection</h3>
+          <CommandCopy command={`curl -X PUT 'http://localhost:6333/collections/my_collection' \\
+-H 'Content-Type: application/json' \\
+-d '{
+  "vectors": {
+    "size": 384,
+    "distance": "Cosine"
+  }
+}'`} language="bash" />
+        </div>
+        
+        <div>
+          <h3 class="text-xl font-bold mb-4">Stop & Remove</h3>
+          <CommandCopy command={`docker-compose down
+# To remove volumes as well:
+docker-compose down -v`} />
+        </div>
+      </div>
+      
+      <div class="text-center mt-12">
+        <a href="/tutorial-qdrant-api" class="btn">View Full Tutorial</a>
+      </div>
+    </div>
+  </section>
+</MainLayout>
