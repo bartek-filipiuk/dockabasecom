@@ -97,7 +97,23 @@ if [ "$SKIP_DOWNLOAD" = false ]; then
   
   # Check if we're running from the project directory and can copy files
   SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
-  if [ -f "$SCRIPT_DIR/Dockerfile" ] && [ -f "$SCRIPT_DIR/docker-compose.yml" ]; then
+  CURRENT_DIR=$(pwd)
+  
+  # Sprawdź pliki w bieżącym katalogu
+  if [ -f "$CURRENT_DIR/Dockerfile" ] && [ -f "$CURRENT_DIR/docker-compose.yml" ]; then
+    print_message "Found project files in current directory. Copying to $PROJECT_DIR..."
+    
+    # Create necessary directories
+    mkdir -p $PROJECT_DIR/docker/nginx/certbot/conf
+    mkdir -p $PROJECT_DIR/docker/nginx/certbot/www
+    
+    # Copy all project files to the deployment directory
+    cp -r $CURRENT_DIR/* $PROJECT_DIR/
+    cp -r $CURRENT_DIR/.* $PROJECT_DIR/ 2>/dev/null || true
+    
+    print_message "Project files copied successfully."
+  # Sprawdź pliki w katalogu skryptu
+  elif [ -f "$SCRIPT_DIR/Dockerfile" ] && [ -f "$SCRIPT_DIR/docker-compose.yml" ]; then
     print_message "Found project files in script directory. Copying to $PROJECT_DIR..."
     
     # Create necessary directories
