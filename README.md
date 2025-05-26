@@ -130,18 +130,51 @@ After adding a user to the docker group, you need to log out and log back in for
 
 ### 3. Application Deployment (as regular user)
 
-After setting up the system, log in as your regular user and run the `deploy-app.sh` script:
+After setting up the system, log in as your regular user and use the `deploy-app.sh` script to manage your application. This script provides several commands for deployment and management:
+
+#### Initial Deployment
 
 ```bash
-./deploy-app.sh yourdomain.com your@email.com
+./deploy-app.sh deploy yourdomain.com your@email.com
 ```
 
-This script will:
+This command will:
 - Configure Caddy with your domain
 - Automatically handle SSL certificates (Caddy manages this for you)
-- Deploy the Dockabase application
+- Build the application using a temporary Node.js container
+- Deploy the Dockabase application with Docker Compose
 
 Your website will be accessible at `https://yourdomain.com`
+
+#### Managing Your Deployment
+
+The script provides several additional commands to manage your application:
+
+```bash
+# Start the application (includes building the latest content)
+./deploy-app.sh start
+
+# Stop the application
+./deploy-app.sh stop
+
+# Restart the application (includes rebuilding for content updates)
+./deploy-app.sh restart
+
+# Check the status of the application
+./deploy-app.sh status
+
+# View application logs
+./deploy-app.sh logs
+```
+
+#### Content Updates
+
+When you update content in Markdown files or make other changes to the site:
+
+1. Push your changes to the server
+2. Run `./deploy-app.sh restart` to rebuild the site with your changes
+
+The script will automatically rebuild the application before restarting, ensuring your content changes are included in the deployment.
 
 For detailed deployment instructions, refer to the `deployment.md` file.
 
