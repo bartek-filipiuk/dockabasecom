@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: dockabase-prod
     restart: unless-stopped
+    volumes:
+      - dist_volume:/app/dist
     networks:
       - dockabase-network
 
@@ -17,7 +19,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./dist:/srv/www
+      - dist_volume:/srv/www
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
@@ -26,6 +28,8 @@ services:
       - dockabase-network
 
 volumes:
+  dist_volume:
+    name: dockabase_dist
   caddy_data:
     name: dockabase_caddy_data
   caddy_config:
