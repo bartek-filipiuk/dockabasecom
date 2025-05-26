@@ -5,7 +5,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4.1-blue.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-22-orange.svg)
 
-This repository contains the source code for the Dockabase informational website. The site provides documentation, tutorials, and guides for using the Dockabase project, which helps developers set up and use the Qdrant vector database in a Docker environment.
+This repository contains the source code for the [Dockabase website](https://dockabase.com). The site provides documentation, tutorials, and guides for using the Dockabase project, which helps developers set up and use the Qdrant vector database in a Docker environment.
 
 ## About This Repository
 
