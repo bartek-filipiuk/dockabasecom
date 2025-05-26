@@ -181,6 +181,8 @@ deploy_app() {
 # Start the application
 start_app() {
   check_required_files
+  # Build the application first
+  build_application
   print_message "Starting the application..."
   docker compose up -d
   print_message "Application started"
@@ -196,8 +198,12 @@ stop_app() {
 # Restart the application
 restart_app() {
   print_message "Restarting the application..."
-  docker compose restart
-  print_message "Application restarted"
+  # Build the application first to ensure content is up to date
+  build_application
+  # Stop and start instead of just restart to ensure the new build is used
+  docker compose down
+  docker compose up -d
+  print_message "Application restarted with fresh build"
 }
 
 # Show application status
